@@ -288,6 +288,10 @@ void setup() {
 		tft.setTextColor(TFT_WHITE);
 		tft.setCursor(0, 0);
 		tft.setTextDatum(MC_DATUM);
+
+
+
+		
 	tft.printf("Please selected your \nmode \n(with bottom buttons)");
 	tft.setCursor(0, 230);
 		tft.setTextColor(TFT_RED);
@@ -465,7 +469,6 @@ void drawNetworkActivity()
 	drawing_sprite.printf("Connected clients : ");
 		drawing_sprite.setTextColor(TFT_WHITE);
 	drawing_sprite.printf("%d\n", WiFi.softAPgetStationNum());
-drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
 
 	
 
@@ -507,6 +510,7 @@ drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
  
 
 
+drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
 
 
 	drawing_sprite.pushSprite(0, 0);
