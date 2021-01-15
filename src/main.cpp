@@ -244,7 +244,8 @@ void sta_setup()
 void ap_setup()
 {
 	WiFi.mode(WIFI_AP);
-	WiFi.softAP(APssid, APpassword);
+	WiFi.softAP(APssid, APpassword, 1, 0, 10);
+	
 	IPAddress myIP = WiFi.softAPIP();
 	Serial.print("AP IP address: ");
 	Serial.println(myIP);
