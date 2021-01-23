@@ -474,7 +474,7 @@ void drawNetworkActivity()
 	
 
 	
-		wifi_sta_list_t wifi_sta_list;
+	wifi_sta_list_t wifi_sta_list;
 	tcpip_adapter_sta_list_t adapter_sta_list;
  
 	memset(&wifi_sta_list, 0, sizeof(wifi_sta_list));
@@ -487,20 +487,23 @@ void drawNetworkActivity()
 
 		drawing_sprite.setTextColor(TFT_YELLOW);
 
-		drawing_sprite.println("");
+		drawing_sprite.setCursor(0, 50 + (i * 14));
+
+		// drawing_sprite.println("");
  
 		tcpip_adapter_sta_info_t station = adapter_sta_list.sta[i];
  
-		drawing_sprite.setTextColor(TFT_BLUE);
+		//drawing_sprite.setTextColor(TFT_BLUE);
 
-		drawing_sprite.print("MAC: ");
-		drawing_sprite.setTextColor(TFT_WHITE);
+		// drawing_sprite.print("MAC: ");
+		// drawing_sprite.setTextColor(TFT_WHITE);
  
-		for(int i = 0; i< 6; i++){
+		// for(int i = 0; i< 6; i++){
 			
-			drawing_sprite.printf("%02X", station.mac[i]);  
-			if(i<5)drawing_sprite.print(":");
-		}
+		// 	drawing_sprite.printf("%02X", station.mac[i]);  
+		// 	if(i<5)drawing_sprite.print(":");
+		// }
+
 		drawing_sprite.setTextColor(TFT_BLUE);
  
 		drawing_sprite.print("\nIP:  ");  
