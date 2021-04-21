@@ -2,8 +2,6 @@
 
 <br/>
 
-Dezipper le projet
-
 ### Installation de platformio (Sur VScode)
 
 Dans le Menu "Extensions" (Ctrl+Shift+X)
@@ -12,16 +10,15 @@ taper "platformio", puis installer
 ![alt text](https://github.com/juthomas/Tripodes-firmware/blob/master/README_images/Install_Platformio.jpg)
 
 ### Ouverture du projet (Sur platformio)
-
+  Dezipper le projet (Ce repo)  
   Cliquer sur le menu de platformio (Icon a gauche)  
   Puis sur le bouton "Open Project"  
-  Selectionner le projet   
+  Selectionner le projet  
 
 ![alt text](https://github.com/juthomas/Tripodes-firmware/blob/master/README_images/Projet_Open_1.jpg)
 
 ![alt text](https://github.com/juthomas/Tripodes-firmware/blob/master/README_images/Projet_Open_2.jpg)
 
-Ouvrir le dossier du projet (truc dezip(ai))
 
 ### Mise a jour des librairies 
 
