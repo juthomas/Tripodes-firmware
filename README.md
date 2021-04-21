@@ -13,11 +13,9 @@ taper "platformio", puis installer
 
 ### Ouverture du projet (Sur platformio)
 
-Cliquer sur le menu de platformio (Icon a gauche)
-
-Puis sur le bouton "Open Project"
-
-Selectionner le projet 
+  Cliquer sur le menu de platformio (Icon a gauche)  
+  Puis sur le bouton "Open Project"  
+  Selectionner le projet   
 
 ![alt text](https://github.com/juthomas/Tripodes-firmware/blob/master/README_images/Projet_Open_1.jpg)
 
