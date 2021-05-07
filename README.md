@@ -1,5 +1,8 @@
 # Tripdes Firmware (esp32 t-display)
+![alt text](https://github.com/juthomas/Tripodes-firmware/blob/master/README_images/1620348658624.jpg)
+<br/>
 
+## Upload du Firmware
 <br/>
 
 ### Installation de platformio (Sur VScode)
