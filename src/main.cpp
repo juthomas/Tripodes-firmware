@@ -807,6 +807,25 @@ void drawGyroscopActivity(void)
 	drawCursors(&drawing_sprite, 105, 60, 12, 100, -1000, 1000, mag_ycal, TFT_RED);
 	drawCursors(&drawing_sprite, 120, 60, 12, 100, -200, 200, mag_event.magnetic.z, TFT_RED);
 	// event.acceleration.
+	
+	float gyroscope = map(sqrtf(gyro.g.x * gyro.g.x \
+		 + gyro.g.y * gyro.g.y \
+		 + gyro.g.z * gyro.g.z), 0, 37000, 0, 50);
+	float acceleration = map(sqrtf(accel_event.acceleration.x * accel_event.acceleration.x \
+		 + accel_event.acceleration.y * accel_event.acceleration.y \
+		 + accel_event.acceleration.z * accel_event.acceleration.z), 0, 40, 0, 50);
+	
+	drawing_sprite.setCursor(5, 170);
+	drawing_sprite.printf("Accel");
+	drawing_sprite.fillRect(10, 240 - acceleration, 20, acceleration, TFT_RED);
+	drawing_sprite.drawRect(10, 190, 20, 50, TFT_WHITE);
+	
+	drawing_sprite.setCursor(108, 170);
+	drawing_sprite.printf("Gyro");
+	drawing_sprite.fillRect(110, 240 - gyroscope, 20, gyroscope, TFT_RED);
+	drawing_sprite.drawRect(110, 190, 20, 50, TFT_WHITE);
+
+	
 	Serial.print("G ");
 	Serial.print("X: ");
 	Serial.print((int)mag_event.magnetic.x);
