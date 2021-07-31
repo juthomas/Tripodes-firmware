@@ -738,9 +738,9 @@ void drawGyroscopActivity(void)
 	if (isCalibrated == false)
 	{
 		calMinX = mag_event.magnetic.x;
-		calMaxX = mag_event.magnetic.x;
+		calMaxX = mag_event.magnetic.x + 1;
 		calMinY = mag_event.magnetic.y;
-		calMaxY = mag_event.magnetic.y;
+		calMaxY = mag_event.magnetic.y + 1;
 		isCalibrated = true;
 	}
 	else
