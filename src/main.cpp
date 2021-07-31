@@ -659,25 +659,26 @@ void look_for_udp_message()
 	}
 }
 
-// void compassArraw(TFT_eSprite * sprite, float angle)
-// {
-// 	TFT_eSprite direction = TFT_eSprite(&tft);
-// 	direction.setColorDepth(8);
-// 	direction.createSprite(100, 20);
-// 	direction.fillRect(5, 5, 90, 10, TFT_BLUE);
-// 	direction.fillTriangle(90,0,100,10,90,20,TFT_BLUE);
-// 	direction.setPivot(50, 10);
-// 	// direction.setRotation(60);
+void compassArraw(TFT_eSprite * sprite, int x, int y, float angle)
+{
+	TFT_eSprite direction = TFT_eSprite(&tft);
+	direction.setColorDepth(8);
+	direction.createSprite(50, 20);
+	direction.fillRect(5, 5, 40, 10, TFT_BLUE);
+	direction.fillTriangle(40,0,50,10,40,20,TFT_BLUE);
+	direction.setPivot(25, 10);
+	// direction.setRotation(60);
 	
 	
-// 	// direction.pushSprite(50, 50);
-// 	TFT_eSprite directionBack = TFT_eSprite(&tft);
-// 	directionBack.setColorDepth(8);
-// 	directionBack.createSprite(100, 100);
+	// direction.pushSprite(50, 50);
+	TFT_eSprite directionBack = TFT_eSprite(&tft);
+	directionBack.setColorDepth(8);
+	directionBack.createSprite(50, 50);
 
-// 	direction.pushRotated(&directionBack, angle+90);
-// 	directionBack.pushToSprite(&sprite, 15, 70);
-// }
+	direction.pushRotated(&directionBack, angle+90);
+	directionBack.pushToSprite((TFT_eSprite*)sprite,(int32_t) x,(int32_t) y);
+	(*sprite).drawCircle(x + 25, y + 25, 30, TFT_WHITE);
+}
 
 void drawCursors(TFT_eSprite *sprite, int x, int y, int w, int h, int min, int max, int value, uint32_t color)
 {
@@ -696,6 +697,11 @@ void drawCursors(TFT_eSprite *sprite, int x, int y, int w, int h, int min, int m
 
 void drawGyroscopActivity(void)
 {
+	static bool isCalibrated = false;
+	static int calMinX = 0;
+	static int calMaxX = 0;
+	static int calMinY = 0;
+	static int calMaxY = 0;
 	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
 	drawing_sprite.setColorDepth(8);
 	drawing_sprite.createSprite(tft.width(), tft.height());
@@ -722,19 +728,85 @@ void drawGyroscopActivity(void)
 	// mag.getSensor(&event);
 	// gyro.getEvent(&event);
 	gyro.read();
-	drawCursors(&drawing_sprite, 0, 50, 12, 100, -40, 40, accel_event.acceleration.x, TFT_RED);
-	drawCursors(&drawing_sprite, 15, 50, 12, 100, -40, 40, accel_event.acceleration.y, TFT_RED);
-	drawCursors(&drawing_sprite, 30, 50, 12, 100, -40, 40, accel_event.acceleration.z, TFT_RED);
 
-	drawCursors(&drawing_sprite, 45, 50, 12, 100, -37000, 37000, gyro.g.x, TFT_RED);
-	drawCursors(&drawing_sprite, 60, 50, 12, 100, -37000, 37000, gyro.g.y, TFT_RED);
-	drawCursors(&drawing_sprite, 75, 50, 12, 100, -37000, 37000, gyro.g.z, TFT_RED);
 
-	drawCursors(&drawing_sprite, 90, 50, 12, 100, -200, 200, mag_event.magnetic.x, TFT_RED);
-	drawCursors(&drawing_sprite, 105, 50, 12, 100, -200, 200, mag_event.magnetic.y, TFT_RED);
-	drawCursors(&drawing_sprite, 120, 50, 12, 100, -200, 200, mag_event.magnetic.z, TFT_RED);
+	// Calculate the angle of the vector y,x
+
+	// Normalize to 0-360
+
+
+	if (isCalibrated == false)
+	{
+		calMinX = mag_event.magnetic.x;
+		calMaxX = mag_event.magnetic.x;
+		calMinY = mag_event.magnetic.y;
+		calMaxY = mag_event.magnetic.y;
+		isCalibrated = true;
+	}
+	else
+	{
+		if (mag_event.magnetic.x < calMinX)
+			calMinX = mag_event.magnetic.x;
+		else if (mag_event.magnetic.x > calMaxX)
+			calMaxX = mag_event.magnetic.x;
+		if (mag_event.magnetic.y < calMinY)
+			calMinY = mag_event.magnetic.y;
+		else if (mag_event.magnetic.y > calMaxY)
+			calMaxY = mag_event.magnetic.y;
+	}
+
+
+	int mag_xcal = map(mag_event.magnetic.x, calMinX, calMaxX, -1000, 1000);
+	int mag_ycal = map(mag_event.magnetic.y, calMinY, calMaxY, -1000, 1000);
+	float heading = atan2((double)mag_xcal, (double)mag_ycal);
+	// if (heading < 0) {
+	// 	heading = 360 + heading;
+	// }
+
+	compassArraw(&drawing_sprite, 45, 175, (-(int)(heading * 180 / PI)));
+
+	drawing_sprite.setCursor(7, 30);
+	drawing_sprite.printf("Accel");
+	drawing_sprite.setCursor(4, 45);
+	drawing_sprite.printf("X");
+	drawing_sprite.setCursor(19, 45);
+	drawing_sprite.printf("Y");
+	drawing_sprite.setCursor(34, 45);
+	drawing_sprite.printf("Z");
+
+	drawing_sprite.setCursor(56, 30);
+	drawing_sprite.printf("Gyro");
+
+	drawing_sprite.setCursor(49, 45);
+	drawing_sprite.printf("X");
+	drawing_sprite.setCursor(64, 45);
+	drawing_sprite.printf("Y");
+	drawing_sprite.setCursor(79, 45);
+	drawing_sprite.printf("Z");
+
+
+	drawing_sprite.setCursor(105, 30);
+	drawing_sprite.printf("Mag");
+
+	drawing_sprite.setCursor(94, 45);
+	drawing_sprite.printf("X");
+	drawing_sprite.setCursor(109, 45);
+	drawing_sprite.printf("Y");
+	drawing_sprite.setCursor(124, 45);
+	drawing_sprite.printf("Z");
+
+	drawCursors(&drawing_sprite, 0, 60, 12, 100, -40, 40, accel_event.acceleration.x, TFT_RED);
+	drawCursors(&drawing_sprite, 15, 60, 12, 100, -40, 40, accel_event.acceleration.y, TFT_RED);
+	drawCursors(&drawing_sprite, 30, 60, 12, 100, -40, 40, accel_event.acceleration.z, TFT_RED);
+
+	drawCursors(&drawing_sprite, 45, 60, 12, 100, -37000, 37000, gyro.g.x, TFT_RED);
+	drawCursors(&drawing_sprite, 60, 60, 12, 100, -37000, 37000, gyro.g.y, TFT_RED);
+	drawCursors(&drawing_sprite, 75, 60, 12, 100, -37000, 37000, gyro.g.z, TFT_RED);
+
+	drawCursors(&drawing_sprite, 90, 60, 12, 100, -1000, 1000, mag_xcal, TFT_RED);
+	drawCursors(&drawing_sprite, 105, 60, 12, 100, -1000, 1000, mag_ycal, TFT_RED);
+	drawCursors(&drawing_sprite, 120, 60, 12, 100, -200, 200, mag_event.magnetic.z, TFT_RED);
 	// event.acceleration.
-
 	Serial.print("G ");
 	Serial.print("X: ");
 	Serial.print((int)mag_event.magnetic.x);
