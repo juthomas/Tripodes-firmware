@@ -12,6 +12,7 @@
 #include <Adafruit_LSM303_Accel.h>
 #include <Adafruit_LSM303DLH_Mag.h>
 #include <EEPROM.h>
+#include <PS4Controller.h>
 // #include <Adafruit_L3GD20_U.h>
 
 #define EEPROM_SIZE 512
@@ -71,7 +72,8 @@ enum e_wifi_modes
 	NONE_MODE = 0,
 	STA_MODE,
 	AP_MODE,
-	GYRO_MODE
+	GYRO_MODE,
+	PS4_MODE
 };
 
 t_data_task g_data_task[3];
@@ -199,6 +201,13 @@ void IRAM_ATTR button1_handler(Button2 &btn)
 			// EEPROM.writeUInt(10, oscAddress);
 			// EEPROM.commit();
 		}
+	}
+	if (click_type == DOUBLE_CLICK)
+	{
+		Serial.println("Bouton A double clicked");
+
+		// oscAddress = EEPROM.readUInt(10);
+		current_mode = PS4_MODE;
 	}
 }
 
@@ -420,6 +429,11 @@ void setup()
 		}
 		else if (current_mode == GYRO_MODE)
 		{
+			break;
+		}
+		else if (current_mode == PS4_MODE)
+		{
+			PS4.begin((char*)"01:01:01:01:01:01");
 			break;
 		}
 		delay(100);
@@ -892,6 +906,14 @@ void drawGyroscopActivity(void)
 	drawing_sprite.deleteSprite();
 }
 
+void drawPS4Activity(void)
+{
+	if (PS4.isConnected()) {
+		Serial.printf("L Sticky X : %d\n", PS4.LStickX());
+		Serial.printf("L Sticky Y : %d\n", PS4.LStickY());
+	}
+}
+
 void loop()
 {
 	if (current_mode == STA_MODE)
@@ -915,6 +937,10 @@ void loop()
 	else if (current_mode == GYRO_MODE)
 	{
 		drawGyroscopActivity();
+	}
+	else if (current_mode == PS4_MODE)
+	{
+		drawPS4Activity();
 	}
 	//Serial.println(".");
 	delay(25);
