@@ -11,7 +11,10 @@
 #include <L3G.h>
 #include <Adafruit_LSM303_Accel.h>
 #include <Adafruit_LSM303DLH_Mag.h>
+#include <EEPROM.h>
 // #include <Adafruit_L3GD20_U.h>
+
+#define EEPROM_SIZE 512
 
 #ifndef TFT_DISPOFF
 #define TFT_DISPOFF 0x28
@@ -93,6 +96,9 @@ const char *APssid = "tripodesAP";
 const char *APpassword = "44448888";
 
 WiFiUDP Udp;
+bool oscAddressChanged = false;
+unsigned int oscAddress = 1;
+unsigned int outUdpPort = 49100;
 unsigned int localUdpPort = 49141;
 char incomingPacket[255];
 String convertedPacket;
@@ -175,7 +181,7 @@ const char *eTaskGetState_to_string(int ah)
 	}
 }
 
-void button1_handler(Button2 &btn)
+void IRAM_ATTR button1_handler(Button2 &btn)
 {
 	uint32_t click_type = btn.getClickType();
 
@@ -186,10 +192,17 @@ void button1_handler(Button2 &btn)
 		{
 			current_mode = STA_MODE;
 		}
+		else if (current_mode == GYRO_MODE)
+		{
+			oscAddress = oscAddress < 99999 ? oscAddress + 1 : 99999;
+			oscAddressChanged = true;
+			// EEPROM.writeUInt(10, oscAddress);
+			// EEPROM.commit();
+		}
 	}
 }
 
-void button2_handler(Button2 &btn)
+void IRAM_ATTR button2_handler(Button2 &btn)
 {
 	uint32_t click_type = btn.getClickType();
 
@@ -200,10 +213,19 @@ void button2_handler(Button2 &btn)
 		{
 			current_mode = AP_MODE;
 		}
+		else if (current_mode == GYRO_MODE)
+		{
+			oscAddress = oscAddress > 0 ? oscAddress - 1 : 0;
+			oscAddressChanged = true;
+			// EEPROM.writeUInt(10, oscAddress);
+			// EEPROM.commit();
+		}
 	}
 	if (click_type == DOUBLE_CLICK)
 	{
 		Serial.println("Bouton B double clicked");
+
+		// oscAddress = EEPROM.readUInt(10);
 		current_mode = GYRO_MODE;
 	}
 }
@@ -220,13 +242,13 @@ void button_init()
 	btn2.setTripleClickHandler(button2_handler);
 }
 
-void button_loop()
+void IRAM_ATTR button_loop()
 {
 	btn1.loop();
 	btn2.loop();
 }
 
-void call_buttons(void)
+void IRAM_ATTR call_buttons(void)
 {
 	button_loop();
 }
@@ -295,6 +317,7 @@ void ap_setup()
 
 void setup()
 {
+	EEPROM.begin(EEPROM_SIZE);
 	// put your setup code here, to run once:
 	current_mode = NONE_MODE;
 	Serial.begin(115200);
@@ -302,6 +325,9 @@ void setup()
 	WiFi.begin(ssid, password);
 
 	Wire.begin();
+
+	oscAddress = EEPROM.readUInt(0);
+		// current_mode = GYRO_MODE;
 
 	if (!gyro.init())
 	{
@@ -390,6 +416,10 @@ void setup()
 		else if (current_mode == AP_MODE)
 		{
 			ap_setup();
+			break;
+		}
+		else if (current_mode == GYRO_MODE)
+		{
 			break;
 		}
 		delay(100);
@@ -675,7 +705,7 @@ void compassArraw(TFT_eSprite * sprite, int x, int y, float angle)
 	directionBack.setColorDepth(8);
 	directionBack.createSprite(50, 50);
 
-	direction.pushRotated(&directionBack, angle+90);
+	direction.pushRotated(&directionBack, angle);
 	directionBack.pushToSprite((TFT_eSprite*)sprite,(int32_t) x,(int32_t) y);
 	(*sprite).drawCircle(x + 25, y + 25, 30, TFT_WHITE);
 }
@@ -702,6 +732,31 @@ void drawGyroscopActivity(void)
 	static int calMaxX = 0;
 	static int calMinY = 0;
 	static int calMaxY = 0;
+	
+	if (oscAddressChanged == true)
+	{
+		EEPROM.writeUInt(0, oscAddress);
+		EEPROM.write(0, oscAddress);
+		// uint32_t tmp = oscAddress;
+		// int i = 0;
+		// while (tmp)
+		// {
+		// 	EEPROM.write(i, tmp % 256);
+		// 	tmp /= 256;
+		// 	i++;
+		// }
+
+		EEPROM.commit();
+		delay(200);
+		oscAddressChanged = false;
+	}
+
+    // for (int i = 0; i < 512; i++) {
+    //   EEPROM.write(i, 0);
+    // }
+    // EEPROM.commit();
+
+
 	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
 	drawing_sprite.setColorDepth(8);
 	drawing_sprite.createSprite(tft.width(), tft.height());
@@ -720,6 +775,8 @@ void drawGyroscopActivity(void)
 	drawing_sprite.setTextColor(TFT_WHITE);
 	drawing_sprite.printf("%.2fv\n\n", battery_voltage);
 	drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
+	drawing_sprite.setTextColor(TFT_WHITE);
+
 
 	sensors_event_t accel_event;
 	sensors_event_t mag_event;
@@ -764,6 +821,10 @@ void drawGyroscopActivity(void)
 	// }
 
 	compassArraw(&drawing_sprite, 45, 175, (-(int)(heading * 180 / PI)));
+
+	drawing_sprite.setCursor(2, 15);
+	drawing_sprite.printf("osc addr : /%d", oscAddress);
+
 
 	drawing_sprite.setCursor(7, 30);
 	drawing_sprite.printf("Accel");

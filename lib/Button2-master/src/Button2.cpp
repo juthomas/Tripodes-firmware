@@ -105,7 +105,7 @@ unsigned int Button2::getClickType() {
 
 /////////////////////////////////////////////////////////////////
 
-void Button2::loop() {
+void IRAM_ATTR Button2::loop() {
   prev_state = state;
   state = digitalRead(pin);
 
