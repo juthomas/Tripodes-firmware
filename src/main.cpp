@@ -735,19 +735,12 @@ void drawGyroscopActivity(void)
 	
 	if (oscAddressChanged == true)
 	{
+		noInterrupts();
+		delay(50);
 		EEPROM.writeUInt(0, oscAddress);
-		EEPROM.write(0, oscAddress);
-		// uint32_t tmp = oscAddress;
-		// int i = 0;
-		// while (tmp)
-		// {
-		// 	EEPROM.write(i, tmp % 256);
-		// 	tmp /= 256;
-		// 	i++;
-		// }
-
 		EEPROM.commit();
-		delay(200);
+		delay(50);
+		interrupts();
 		oscAddressChanged = false;
 	}
 
