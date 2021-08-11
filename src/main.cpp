@@ -12,6 +12,9 @@
 #include <Adafruit_LSM303_Accel.h>
 #include <Adafruit_LSM303DLH_Mag.h>
 #include <EEPROM.h>
+#include <OSCMessage.h>
+#include <string>  
+#include <sstream>
 // #include <Adafruit_L3GD20_U.h>
 
 #define EEPROM_SIZE 512
@@ -89,13 +92,23 @@ e_wifi_modes current_mode;
 // const char* ssid = "Freebox-0E3EAE";
 // const char* password =  "taigaest1chien";
 
-const char *ssid = "tripodesAP";
-const char *password = "44448888";
+const char *ssid = "Dourr";
+const char *password = "Akiraestlepluscooldeschien28os";
 
 const char *APssid = "tripodesAP";
 const char *APpassword = "44448888";
 
 WiFiUDP Udp;
+
+const IPAddress outIp(192,168,0,12);        // remote IP of your computer
+// const IPAddress outIp(192,168,0,41);        // remote IP of your computer
+
+// const IPAddress outIp(192,168,56,1);        // remote IP of your computer
+const unsigned int outPort = 2002;          // remote port to receive OSC
+
+
+
+
 bool oscAddressChanged = false;
 unsigned int oscAddress = 1;
 unsigned int outUdpPort = 49100;
@@ -180,6 +193,20 @@ const char *eTaskGetState_to_string(int ah)
 		return "ERROR NOT STATE";
 	}
 }
+
+double fmap(double x, double in_min, double in_max, double out_min, double out_max) {
+    const double dividend = out_max - out_min;
+    const double divisor = in_max - in_min;
+    const double delta = x - in_min;
+    if(divisor == 0){
+        log_e("Invalid map input range, min == max");
+        return -1; //AVR returns -1, SAM returns 0
+    }
+    return (delta * dividend + (divisor / 2.0)) / divisor + out_min;
+}
+
+
+
 
 void IRAM_ATTR button1_handler(Button2 &btn)
 {
@@ -420,6 +447,7 @@ void setup()
 		}
 		else if (current_mode == GYRO_MODE)
 		{
+			   Udp.begin(localUdpPort);
 			break;
 		}
 		delay(100);
@@ -725,6 +753,41 @@ void drawCursors(TFT_eSprite *sprite, int x, int y, int w, int h, int min, int m
 	// (*sprite).fillRect(x, y, 10, 50, TFT_WHITE);
 }
 
+void sendOscMessage(char *oscPrefix, String oscMessage)
+{
+	OSCMessage msg(oscPrefix);
+	// String message = String(accel_event.acceleration.x, 3)
+	// 		+ " " + String(accel_event.acceleration.y, 3)
+	// 		+ " " + String(accel_event.acceleration.z, 3);
+	// String message = "Hello world" ;
+	char messageBuffer[50];
+	oscMessage.toCharArray(messageBuffer, 50);
+	Serial.println(messageBuffer);
+    msg.add(messageBuffer);
+    Udp.beginPacket(outIp, outPort);
+    msg.send(Udp);
+    Udp.endPacket();
+    msg.empty();
+}
+
+void sendOscFloatMessage(char *oscPrefix, float oscMessage)
+{
+	OSCMessage msg(oscPrefix);
+	// String message = String(accel_event.acceleration.x, 3)
+	// 		+ " " + String(accel_event.acceleration.y, 3)
+	// 		+ " " + String(accel_event.acceleration.z, 3);
+	// String message = "Hello world" ;
+	// char messageBuffer[50];
+	// oscMessage.toCharArray(messageBuffer, 50);
+	Serial.println(oscMessage);
+    msg.add(oscMessage);
+    Udp.beginPacket(outIp, outPort);
+    msg.send(Udp);
+    Udp.endPacket();
+    msg.empty();
+}
+
+
 void drawGyroscopActivity(void)
 {
 	static bool isCalibrated = false;
@@ -743,6 +806,11 @@ void drawGyroscopActivity(void)
 		interrupts();
 		oscAddressChanged = false;
 	}
+
+
+
+
+
 
     // for (int i = 0; i < 512; i++) {
     //   EEPROM.write(i, 0);
@@ -890,6 +958,54 @@ void drawGyroscopActivity(void)
 
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
+
+
+	float accel_x = fmap(accel_event.acceleration.x, -40, 40, -100, 100);
+	float accel_y = fmap(accel_event.acceleration.y, -40, 40, -100, 100);
+	float accel_z = fmap(accel_event.acceleration.z, -40, 40, -100, 100);
+	float gyro_x = fmap(gyro.g.x, -37000, 37000, -100, 100);
+	float gyro_y = fmap(gyro.g.y, -37000, 37000, -100, 100);
+	float gyro_z = fmap(gyro.g.z, -37000, 37000, -100, 100);
+	float magnet_x = fmap(mag_event.magnetic.x, -100, 100, -100, 100);
+	float magnet_y = fmap(mag_event.magnetic.y, -100, 100, -100, 100);
+	float magnet_z = fmap(mag_event.magnetic.z, -100, 100, -100, 100);
+
+	float gyro_normal = map(sqrtf(gyro.g.x * gyro.g.x \
+		 + gyro.g.y * gyro.g.y \
+		 + gyro.g.z * gyro.g.z), 0, 37000, 0, 100);
+	float accel_normal = map(sqrtf(accel_event.acceleration.x * accel_event.acceleration.x \
+		 + accel_event.acceleration.y * accel_event.acceleration.y \
+		 + accel_event.acceleration.z * accel_event.acceleration.z), 0, 40, 0, 100);
+
+
+
+	sendOscFloatMessage("/accelerometer_x", (float)accel_x);
+	sendOscFloatMessage("/accelerometer_y", (float)accel_y);
+	sendOscFloatMessage("/accelerometer_z", (float)accel_z);
+	sendOscFloatMessage("/accelerometer_normal", (float)accel_normal);
+
+	sendOscFloatMessage("/gyroscope_x", (float)gyro_x);
+	sendOscFloatMessage("/gyroscope_y", (float)gyro_y);
+	sendOscFloatMessage("/gyroscope_z", (float)gyro_z);
+	sendOscFloatMessage("/gyroscope_normal", (float)gyro_normal);
+
+	sendOscFloatMessage("/magnetometer_x", (float)magnet_x);
+	sendOscFloatMessage("/magnetometer_y", (float)magnet_y);
+	sendOscFloatMessage("/magnetometer_z", (float)magnet_z);
+
+
+	// sendOscMessage("/accelerometer",  String(accel_x)
+	// 		+ " " + String(accel_y)
+	// 		+ " " + String(accel_z));
+	// sendOscMessage("/gyroscope",  String(gyro_x)
+	// 		+ " " + String(gyro_y)
+	// 		+ " " + String(gyro_z));
+	// sendOscMessage("/magnetometer",  String(magnet_x)
+	// 		+ " " + String(magnet_y)
+	// 		+ " " + String(magnet_z));
+
+
+
 }
 
 void loop()
@@ -918,5 +1034,6 @@ void loop()
 	}
 	//Serial.println(".");
 	delay(25);
+	// delay(500);
 	// put your main code here, to run repeatedly:
 }
