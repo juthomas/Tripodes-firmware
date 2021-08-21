@@ -381,7 +381,7 @@ void setup()
 			;
 	}
 
-	timers[3] = timerBegin(3, 80, true);
+	timers[3] = timerBegin(0, 80, true);
 	timerAttachInterrupt(timers[3], &call_buttons, false);
 	timerAlarmWrite(timers[3], 50 * 1000, true);
 	timerAlarmEnable(timers[3]);
@@ -433,7 +433,7 @@ void setup()
 		}
 		else if (current_mode == PS4_MODE)
 		{
-			PS4.begin((char*)"01:01:01:01:01:01");
+			PS4.begin((char*)"50:E0:85:BB:93:87");
 			break;
 		}
 		delay(100);
@@ -906,12 +906,48 @@ void drawGyroscopActivity(void)
 	drawing_sprite.deleteSprite();
 }
 
+const char* byteToBinary(uint8_t byte) {
+  String byteString(byte, BIN);
+
+  for (int i = byteString.length(); i < 8; i++) {
+    byteString = '0' + byteString;
+  }
+	const char *str = byteString.c_str();
+  return str;
+}
+
+void printBits(uint8_t* packet, int byteCount) {
+//   for (int byte = byteCount; byte >= 0; byte -= 1) {
+//     // Serial.printf("BYTE %d :\t%S %S %S %S\t: BYTE %d\n",
+//     //   (byte + 3),
+//     //   byteToBinary(packet[byte + 3]),
+//     //   byteToBinary(packet[byte + 2]),
+//     //   byteToBinary(packet[byte + 1]),
+//     //   byteToBinary(packet[byte]),
+//     //   byte);
+//   }
+  Serial.println();
+}
+
 void drawPS4Activity(void)
 {
-	if (PS4.isConnected()) {
-		Serial.printf("L Sticky X : %d\n", PS4.LStickX());
-		Serial.printf("L Sticky Y : %d\n", PS4.LStickY());
-	}
+	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
+	drawing_sprite.setColorDepth(8);
+	drawing_sprite.createSprite(tft.width(), tft.height());
+	drawing_sprite.fillSprite(TFT_BLACK);
+	// if (PS4.isConnected()) {
+	// 	Serial.printf("L Sticky X : %d\n", PS4.data.analog.stick.lx);
+	// 	Serial.printf("L Sticky Y : %d\n", PS4.data.analog.stick.ly);
+	// 	// printBits(PS4.LatestPacket(), 64);
+	// 	delay(500);
+	// }
+	// else
+	// {
+		Serial.printf("Not connected");
+	// }
+
+	drawing_sprite.pushSprite(0, 0);
+	drawing_sprite.deleteSprite();
 }
 
 void loop()
