@@ -92,8 +92,11 @@ e_wifi_modes current_mode;
 // const char* ssid = "Freebox-0E3EAE";
 // const char* password =  "taigaest1chien";
 
-const char *ssid = "Dourr";
-const char *password = "Akiraestlepluscooldeschien28os";
+// const char *ssid = "Dourr";
+// const char *password = "Akiraestlepluscooldeschien28os";
+
+const char *ssid = "tripodesAP";
+const char *password = "44448888";
 
 const char *APssid = "tripodesAP";
 const char *APpassword = "44448888";
@@ -356,48 +359,7 @@ void setup()
 	oscAddress = EEPROM.readUInt(0);
 		// current_mode = GYRO_MODE;
 
-	if (!gyro.init())
-	{
-		Serial.println("Failed to autodetect gyro type!");
-		while (1)
-			;
-	}
 
-	gyro.enableDefault();
-	//   gyro.enableAutoRange(true);
-	// if(!gyro.begin())
-	// {
-	// 	/* There was a problem detecting the L3GD20 ... check your connections */
-	// 	Serial.println("Ooops, no L3GD20 detected ... Check your wiring!");
-	// 	while(1);
-	// }
-
-	// gyro.enableDefault();
-	// WiFiAP.begin(APssid, APpassword);
-
-	/* Initialise the sensor */
-	if (!accel.begin())
-	{
-		/* There was a problem detecting the ADXL345 ... check your connections */
-		Serial.println("Ooops, no LSM303 detected(accel) ... Check your wiring!");
-		while (1)
-			;
-	}
-
-	accel.setRange(LSM303_RANGE_4G);
-	accel.setMode(LSM303_MODE_NORMAL);
-
-	/* Enable auto-gain */
-	mag.enableAutoRange(true);
-
-	/* Initialise the sensor */
-	if (!mag.begin())
-	{
-		/* There was a problem detecting the LSM303 ... check your connections */
-		Serial.println("Ooops, no LSM303 detected(mag) ... Check your wiring!");
-		while (1)
-			;
-	}
 
 	timers[3] = timerBegin(3, 80, true);
 	timerAttachInterrupt(timers[3], &call_buttons, false);
@@ -447,6 +409,48 @@ void setup()
 		}
 		else if (current_mode == GYRO_MODE)
 		{
+				if (!gyro.init())
+	{
+		Serial.println("Failed to autodetect gyro type!");
+		while (1)
+			;
+	}
+
+	gyro.enableDefault();
+	//   gyro.enableAutoRange(true);
+	// if(!gyro.begin())
+	// {
+	// 	/* There was a problem detecting the L3GD20 ... check your connections */
+	// 	Serial.println("Ooops, no L3GD20 detected ... Check your wiring!");
+	// 	while(1);
+	// }
+
+	// gyro.enableDefault();
+	// WiFiAP.begin(APssid, APpassword);
+
+	/* Initialise the sensor */
+	if (!accel.begin())
+	{
+		/* There was a problem detecting the ADXL345 ... check your connections */
+		Serial.println("Ooops, no LSM303 detected(accel) ... Check your wiring!");
+		while (1)
+			;
+	}
+
+	accel.setRange(LSM303_RANGE_4G);
+	accel.setMode(LSM303_MODE_NORMAL);
+
+	/* Enable auto-gain */
+	mag.enableAutoRange(true);
+
+	/* Initialise the sensor */
+	if (!mag.begin())
+	{
+		/* There was a problem detecting the LSM303 ... check your connections */
+		Serial.println("Ooops, no LSM303 detected(mag) ... Check your wiring!");
+		while (1)
+			;
+	}
 			   Udp.begin(localUdpPort);
 			break;
 		}
