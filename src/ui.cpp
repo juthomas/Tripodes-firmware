@@ -319,17 +319,28 @@ float updateDFA(t_sensors sensors)
 {
 	static float *x = 0;
 	static float *x_tmp = 0;
-	
-	size_t size_x = 20;
+	static float *alpha_mean = 0;
+
+
+
+	size_t size_x = 400;
+	size_t size_tmp_x = 20;
+	size_t size_alpha_mean = 50;
 	static size_t current_index = 0;
-	
+	static size_t current_alpha_index = 0;
+
 	if (x == 0)
 	{
 		x = (float*)malloc(sizeof(float) * size_x);
 		x_tmp = (float*)malloc(sizeof(float) * size_x);
+		alpha_mean = (float*)malloc(sizeof(float) * size_alpha_mean);
 		for (size_t i = 0; i < size_x; i++)
 		{
 			x[i] = 0.0;
+		}
+		for (size_t i = 0; i < size_alpha_mean; i++)
+		{
+			alpha_mean[i] = 0.0;
 		}
 	}
 	x[current_index] = map(sqrtf(sensors.gyro.x * sensors.gyro.x \
@@ -337,17 +348,55 @@ float updateDFA(t_sensors sensors)
 		 + sensors.gyro.z * sensors.gyro.z), 0, 37000, 0, 100);
 	for (size_t i = 0; i < size_x; i++)
 	{
-		x_tmp[size_x - i] = x[(current_index - i) % size_x];
+		x_tmp[size_x - i - 1] = x[(current_index - i) % size_x];
 	}
-	Serial.printf("current index : %d\n", current_index);
-	for (size_t i = 0; i < size_x; i++)
+
+	for (size_t i = 0; i < size_tmp_x; i++)
 	{
-		Serial.printf("x_tmp[%d] : %f ", i, x_tmp[i]);
-		Serial.printf("x[%d] : %f\n", i, x[i]);
+		size_t beg_i = map(i, 0, size_tmp_x, 0, size_x);
+		float max = 0;
+		for (size_t j = 0; j < size_x / size_tmp_x; j++)
+		{
+			if (max < x_tmp[beg_i + j])
+			{
+				max = x_tmp[beg_i + j];
+			}
+		}
+		x_tmp[i] = max;
+		// Serial.printf("%f, ", max);
 	}
+	// Serial.printf("\n");
+
+	// Serial.printf("current index : %d\n", current_index);
+	// for (size_t i = 0; i < size_x; i++)
+	// {
+	// 	Serial.printf("x_tmp[%d] : %f ", i, x_tmp[i]);
+	// 	Serial.printf("x[%d] : %f\n", i, x[i]);
+	// }
 	
-	current_index = current_index >= 19 ? 0 : current_index + 1;
-	return (dfa(x_tmp, size_x, 2, 4.5, 0.5));
+	current_index = current_index >= size_x -1 ? 0 : current_index + 1;
+
+	// printf("Dfa : %f\n", dfa(x, sizeof(x) / 4, 1, 4, 0.5));
+
+
+	// float dfa_value = dfa(x_tmp, size_tmp_x, 2, 4.5, 0.5);
+	float dfa_value = dfa(x_tmp, size_tmp_x, 1, 4, 0.2);
+	dfa_value = abs(dfa_value);
+
+	alpha_mean[current_alpha_index] = dfa_value;
+// 
+	dfa_value = mean(alpha_mean, size_alpha_mean);
+
+	current_alpha_index = current_alpha_index >= size_alpha_mean ? 0 : current_alpha_index + 1;
+
+	if (dfa_value >= 0.5 && dfa_value <= 3)
+	{
+		dfa_value = 0.4342523523;
+	}
+	dfa_value = fmap(dfa_value, 0, 15, 0, 1.5);
+	// dfa_value = dfa_value * dfa_value;
+	// Serial.printf("Alpha : %f\n", dfa_value);
+	return (dfa_value);
 	// return (dfa(x_tmp, size_x, 4, 10, 0.1));
 	// dfa(x, sizeof(x) / 4, 2, 4.5, 0.5));
 }
@@ -393,8 +442,25 @@ void drawAlpha(TFT_eSPI tft, t_sensors sensors)
 	drawing_sprite.printf("\nlast time :%d", (int32_t)(esp_timer_get_time() / 1000) - last_time);
 	last_time = (esp_timer_get_time() / 1000) ;
 
-	drawing_sprite.printf("\nDFA : %f", updateDFA(sensors));
+	float alpha = updateDFA(sensors);
+	drawing_sprite.printf("\nDFA : %f", alpha);
 
+	if (alpha <= 0.60)
+	{
+		Serial.printf("uniform\n");
+	}
+	else if (alpha < 0.90)
+	{
+		Serial.printf("regular\n");
+	}
+	else if (alpha <= 1.1)
+	{
+		Serial.printf("fractal\n");
+	}
+	else
+	{
+		Serial.printf("complex\n");
+	}
 
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();

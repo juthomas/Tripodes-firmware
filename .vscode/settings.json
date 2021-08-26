@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "tripodes.h": "c"
+        "tripodes.h": "c",
+        "cmath": "cpp"
     }
 }

@@ -177,17 +177,17 @@ float Ln(float x) {
   float ajout = 0;
   if(x<=0.0) return 0;
   if(x<1.0) {
-    negatif = 1;
-    x = 1.0/x;
+	negatif = 1;
+	x = 1.0/x;
   }
   while(x >= 10.0) {
-    x /= 10.0;
-    ajout += 2.302585092994046;
+	x /= 10.0;
+	ajout += 2.302585092994046;
   };
  
   while(x>=1.1) {
-    x = sqrtf(x);
-    fois *= 2;
+	x = sqrtf(x);
+	fois *= 2;
   };
   x--;
   float savx = x;
@@ -196,13 +196,13 @@ float Ln(float x) {
   float quotient = (xp/i);
   float dl = x-quotient;
   while (1.0E-15<quotient) {
-    i++;
-    xp *= x;
-    dl += (xp/i);
-    i++;
-    xp *= x;
-    quotient = (xp/i);
-    dl -= quotient;
+	i++;
+	xp *= x;
+	dl += (xp/i);
+	i++;
+	xp *= x;
+	quotient = (xp/i);
+	dl -= quotient;
   }
  
   dl *= fois;
@@ -389,13 +389,20 @@ float dfa(float *x, size_t size_x, float min_scale, float max_scale, float scale
 	float *fluct = initialize_float_tab(scales_size, 0.0);
 	// printf("Fluct :");
 	// printTab(fluct, scales_size);
-
+	float prevalue = 1;
 	for (size_t i = 0; i < scales_size; i++)
 	{
 		float *rms = calc_rms(y, size_x, scales[i]);
 		fluct[i] = mean_square2(rms, (int)((size_x) / scales[i]));
+		if (fluct[i] == fluct[i])
+		{
+			prevalue = fluct[i];
+		}
+		else
+		{
+			fluct[i] = prevalue;
+		}
 		free(rms);
-
 	}
 	// printf("fluct ");
 	// printTab(fluct, scales_size);

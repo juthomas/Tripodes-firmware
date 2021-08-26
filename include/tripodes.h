@@ -84,4 +84,7 @@ void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress);
 
 void drawAlpha(TFT_eSPI tft, t_sensors sensors);
 
+//dfa.cpp
+float mean(float *tab, size_t tab_size);
+
 #endif
