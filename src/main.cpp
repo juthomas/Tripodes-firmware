@@ -1,52 +1,15 @@
-#include <Arduino.h>
-#include <TFT_eSPI.h>
-#include <SPI.h>
-#include "WiFi.h"
-#include <Wire.h>
-#include <Button2.h>
-#include "esp_adc_cal.h"
-#include <WiFiUdp.h>
-#include "esp_wifi.h"
-#include <Adafruit_Sensor.h>
-#include <L3G.h>
-#include <Adafruit_LSM303_Accel.h>
-#include <Adafruit_LSM303DLH_Mag.h>
-#include <EEPROM.h>
-#include <OSCMessage.h>
-#include <string>  
-#include <sstream>
+
+#include "tripodes.h"
 // #include <Adafruit_L3GD20_U.h>
 
-#define EEPROM_SIZE 512
+const char *ssid = "tripodesAP";
+const char *password = "44448888";
 
-#ifndef TFT_DISPOFF
-#define TFT_DISPOFF 0x28
-#endif
+// const char *ssid = "Dourr";
+// const char *password = "Akiraestlepluscooldeschien28os";
 
-#ifndef TFT_SLPIN
-#define TFT_SLPIN 0x10
-#endif
-
-#define TFT_MOSI 19
-#define TFT_SCLK 18
-#define TFT_CS 5
-#define TFT_DC 16
-#define TFT_RST 23
-
-#define TFT_BL 4  // Display backlight control pin
-#define ADC_EN 14 //ADC_EN is the ADC detection enable port
-#define ADC_PIN 34
-#define BUTTON_1 35
-#define BUTTON_2 0
-
-#define MOTOR_1 25
-#define MOTOR_2 26
-#define MOTOR_3 27
-
-//VIN 3Vo GND SCL SDA GINT GRDY LIN1 LIN2 LRDY
-
-#define SDA 21
-#define SCL 22
+const char *APssid = "tripodesAP";
+const char *APpassword = "44448888";
 
 L3G gyro;
 
@@ -72,14 +35,15 @@ typedef struct s_data_task
 enum e_wifi_modes
 {
 	NONE_MODE = 0,
-	STA_MODE,
-	AP_MODE,
-	GYRO_MODE
+	AP_MODE      = 0b0001,
+	STA_MODE     = 0b0110,
+	SENSORS_MODE = 0b1010,
+	DFA_MODE     = 0b1110,
+	NORM_MASK    = 0b0010 
 };
 
 t_data_task g_data_task[3];
 
-int vref = 1100;
 int timers_end[3] = {0, 0, 0};
 
 #define BLACK 0x0000
@@ -92,11 +56,6 @@ e_wifi_modes current_mode;
 // const char* ssid = "Freebox-0E3EAE";
 // const char* password =  "taigaest1chien";
 
-const char *ssid = "Dourr";
-const char *password = "Akiraestlepluscooldeschien28os";
-
-const char *APssid = "tripodesAP";
-const char *APpassword = "44448888";
 
 WiFiUDP Udp;
 
@@ -195,14 +154,14 @@ const char *eTaskGetState_to_string(int ah)
 }
 
 double fmap(double x, double in_min, double in_max, double out_min, double out_max) {
-    const double dividend = out_max - out_min;
-    const double divisor = in_max - in_min;
-    const double delta = x - in_min;
-    if(divisor == 0){
-        log_e("Invalid map input range, min == max");
-        return -1; //AVR returns -1, SAM returns 0
-    }
-    return (delta * dividend + (divisor / 2.0)) / divisor + out_min;
+	const double dividend = out_max - out_min;
+	const double divisor = in_max - in_min;
+	const double delta = x - in_min;
+	if(divisor == 0){
+		log_e("Invalid map input range, min == max");
+		return -1; //AVR returns -1, SAM returns 0
+	}
+	return (delta * dividend + (divisor / 2.0)) / divisor + out_min;
 }
 
 
@@ -219,12 +178,24 @@ void IRAM_ATTR button1_handler(Button2 &btn)
 		{
 			current_mode = STA_MODE;
 		}
-		else if (current_mode == GYRO_MODE)
+		else if (current_mode & NORM_MASK)
 		{
-			oscAddress = oscAddress < 99999 ? oscAddress + 1 : 99999;
-			oscAddressChanged = true;
-			// EEPROM.writeUInt(10, oscAddress);
-			// EEPROM.commit();
+			if (current_mode == STA_MODE)
+			{
+				current_mode = SENSORS_MODE;
+			}
+			else if (current_mode == SENSORS_MODE)
+			{
+				current_mode = DFA_MODE;
+			}
+			else if (current_mode == DFA_MODE)
+			{
+				current_mode = STA_MODE;
+			}
+			// oscAddress = oscAddress < 99999 ? oscAddress + 1 : 99999;
+			// oscAddressChanged = true;
+			// // EEPROM.writeUInt(10, oscAddress);
+			// // EEPROM.commit();
 		}
 	}
 }
@@ -240,12 +211,25 @@ void IRAM_ATTR button2_handler(Button2 &btn)
 		{
 			current_mode = AP_MODE;
 		}
-		else if (current_mode == GYRO_MODE)
+		else if (current_mode & NORM_MASK)
 		{
-			oscAddress = oscAddress > 0 ? oscAddress - 1 : 0;
-			oscAddressChanged = true;
-			// EEPROM.writeUInt(10, oscAddress);
-			// EEPROM.commit();
+			// oscAddress = oscAddress > 0 ? oscAddress - 1 : 0;
+			// oscAddressChanged = true;
+			// // EEPROM.writeUInt(10, oscAddress);
+			// // EEPROM.commit();
+			if (current_mode == STA_MODE)
+			{
+				current_mode = DFA_MODE;
+			}
+			else if (current_mode == SENSORS_MODE)
+			{
+				current_mode = STA_MODE;
+			}
+			else if (current_mode == DFA_MODE)
+			{
+				current_mode = SENSORS_MODE;
+			}
+
 		}
 	}
 	if (click_type == DOUBLE_CLICK)
@@ -253,7 +237,7 @@ void IRAM_ATTR button2_handler(Button2 &btn)
 		Serial.println("Bouton B double clicked");
 
 		// oscAddress = EEPROM.readUInt(10);
-		current_mode = GYRO_MODE;
+		current_mode = SENSORS_MODE;
 	}
 }
 
@@ -287,7 +271,7 @@ void showVoltage()
 	{
 		timeStamp = millis();
 		uint16_t v = analogRead(ADC_PIN);
-		float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
+		float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (VREF / 1000.0);
 		String voltage = "Voltage :" + String(battery_voltage) + "V";
 		Serial.println(voltage);
 		tft.fillScreen(TFT_BLACK);
@@ -356,6 +340,7 @@ void setup()
 	oscAddress = EEPROM.readUInt(0);
 		// current_mode = GYRO_MODE;
 
+	// delay(500);
 	if (!gyro.init())
 	{
 		Serial.println("Failed to autodetect gyro type!");
@@ -445,42 +430,13 @@ void setup()
 			ap_setup();
 			break;
 		}
-		else if (current_mode == GYRO_MODE)
-		{
-			   Udp.begin(localUdpPort);
-			break;
-		}
 		delay(100);
 	}
 }
 
-void drawBatteryLevel(TFT_eSprite *sprite, int x, int y, float voltage)
-{
-	uint32_t color1 = TFT_GREEN;
-	uint32_t color2 = TFT_WHITE;
-	uint32_t color3 = TFT_BLUE;
-	uint32_t color4 = TFT_RED;
 
-	if (voltage > 4.33)
-	{
-		(*sprite).fillRect(x, y, 30, 10, color3);
-	}
-	else if (voltage > 3.2)
-	{
-		(*sprite).fillRect(x, y, map((long)(voltage * 100), 320, 430, 0, 30), 10, color1);
-		(*sprite).setCursor(x + 7, y + 1);
-		(*sprite).setTextColor(TFT_DARKGREY);
-		(*sprite).printf("%02ld%%", map((long)(voltage * 100), 320, 432, 0, 100));
-	}
-	else
-	{
-		(*sprite).fillRect(x, y, 30, 10, color4);
-	}
 
-	(*sprite).drawRect(x, y, 30, 10, color2);
-}
-
-void drawMotorsActivity()
+void drawMotorsActivity2()
 {
 	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
 
@@ -495,7 +451,7 @@ void drawMotorsActivity()
 	drawing_sprite.setCursor(0, 0);
 
 	uint16_t v = analogRead(ADC_PIN);
-	float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
+	float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (VREF / 1000.0);
 	drawing_sprite.setTextColor(TFT_RED);
 	drawing_sprite.printf("Voltage : ");
 	drawing_sprite.setTextColor(TFT_WHITE);
@@ -567,7 +523,7 @@ void drawNetworkActivity()
 
 	drawing_sprite.setCursor(0, 0);
 	uint16_t v = analogRead(ADC_PIN);
-	float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
+	float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (VREF / 1000.0);
 	drawing_sprite.setTextColor(TFT_RED);
 	drawing_sprite.printf("Voltage : ");
 	drawing_sprite.setTextColor(TFT_WHITE);
@@ -717,41 +673,9 @@ void look_for_udp_message()
 	}
 }
 
-void compassArraw(TFT_eSprite * sprite, int x, int y, float angle)
-{
-	TFT_eSprite direction = TFT_eSprite(&tft);
-	direction.setColorDepth(8);
-	direction.createSprite(50, 20);
-	direction.fillRect(5, 5, 40, 10, TFT_BLUE);
-	direction.fillTriangle(40,0,50,10,40,20,TFT_BLUE);
-	direction.setPivot(25, 10);
-	// direction.setRotation(60);
-	
-	
-	// direction.pushSprite(50, 50);
-	TFT_eSprite directionBack = TFT_eSprite(&tft);
-	directionBack.setColorDepth(8);
-	directionBack.createSprite(50, 50);
 
-	direction.pushRotated(&directionBack, angle);
-	directionBack.pushToSprite((TFT_eSprite*)sprite,(int32_t) x,(int32_t) y);
-	(*sprite).drawCircle(x + 25, y + 25, 30, TFT_WHITE);
-}
 
-void drawCursors(TFT_eSprite *sprite, int x, int y, int w, int h, int min, int max, int value, uint32_t color)
-{
-	if (value < (max - min) / 2 + min)
-	{
-		(*sprite).fillRect(x, y + (h / 2) - map(value, (max - min) / 2 + min, min, 0, h / 2), w, map(value, (max - min) / 2 + min, min, 0, h / 2), color);
-	}
-	else
-	{
-		(*sprite).fillRect(x, y + (h / 2), w, map(value, (max - min) / 2 + min, max, 0, h / 2), color);
-	}
-	(*sprite).drawRect(x, y, w, h, TFT_WHITE);
 
-	// (*sprite).fillRect(x, y, 10, 50, TFT_WHITE);
-}
 
 void sendOscMessage(char *oscPrefix, String oscMessage)
 {
@@ -763,11 +687,11 @@ void sendOscMessage(char *oscPrefix, String oscMessage)
 	char messageBuffer[50];
 	oscMessage.toCharArray(messageBuffer, 50);
 	Serial.println(messageBuffer);
-    msg.add(messageBuffer);
-    Udp.beginPacket(outIp, outPort);
-    msg.send(Udp);
-    Udp.endPacket();
-    msg.empty();
+	msg.add(messageBuffer);
+	Udp.beginPacket(outIp, outPort);
+	msg.send(Udp);
+	Udp.endPacket();
+	msg.empty();
 }
 
 void sendOscFloatMessage(char *oscPrefix, float oscMessage)
@@ -779,12 +703,12 @@ void sendOscFloatMessage(char *oscPrefix, float oscMessage)
 	// String message = "Hello world" ;
 	// char messageBuffer[50];
 	// oscMessage.toCharArray(messageBuffer, 50);
-	Serial.println(oscMessage);
-    msg.add(oscMessage);
-    Udp.beginPacket(outIp, outPort);
-    msg.send(Udp);
-    Udp.endPacket();
-    msg.empty();
+	// Serial.println(oscMessage);
+	msg.add(oscMessage);
+	Udp.beginPacket(outIp, outPort);
+	msg.send(Udp);
+	Udp.endPacket();
+	msg.empty();
 }
 
 
@@ -812,10 +736,10 @@ void drawGyroscopActivity(void)
 
 
 
-    // for (int i = 0; i < 512; i++) {
-    //   EEPROM.write(i, 0);
-    // }
-    // EEPROM.commit();
+	// for (int i = 0; i < 512; i++) {
+	//   EEPROM.write(i, 0);
+	// }
+	// EEPROM.commit();
 
 
 	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
@@ -830,7 +754,7 @@ void drawGyroscopActivity(void)
 	drawing_sprite.setCursor(0, 0);
 
 	uint16_t v = analogRead(ADC_PIN);
-	float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
+	float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (VREF / 1000.0);
 	drawing_sprite.setTextColor(TFT_RED);
 	drawing_sprite.printf("Voltage : ");
 	drawing_sprite.setTextColor(TFT_WHITE);
@@ -881,7 +805,7 @@ void drawGyroscopActivity(void)
 	// 	heading = 360 + heading;
 	// }
 
-	compassArraw(&drawing_sprite, 45, 175, (-(int)(heading * 180 / PI)));
+	compassArraw(tft, &drawing_sprite, 45, 175, (-(int)(heading * 180 / PI)));
 
 	drawing_sprite.setCursor(2, 15);
 	drawing_sprite.printf("osc addr : /%d", oscAddress);
@@ -950,11 +874,11 @@ void drawGyroscopActivity(void)
 	
 	Serial.print("G ");
 	Serial.print("X: ");
-	Serial.print((int)mag_event.magnetic.x);
+	Serial.print((int) gyro.g.x);
 	Serial.print(" Y: ");
-	Serial.print((int)mag_event.magnetic.y);
+	Serial.print((int) gyro.g.y);
 	Serial.print(" Z: ");
-	Serial.println((int)mag_event.magnetic.z);
+	Serial.println((int) gyro.g.z);
 
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
@@ -978,6 +902,8 @@ void drawGyroscopActivity(void)
 		 + accel_event.acceleration.z * accel_event.acceleration.z), 0, 40, 0, 100);
 
 
+	if (0)
+	{
 
 	sendOscFloatMessage("/accelerometer_x", (float)accel_x);
 	sendOscFloatMessage("/accelerometer_y", (float)accel_y);
@@ -992,6 +918,7 @@ void drawGyroscopActivity(void)
 	sendOscFloatMessage("/magnetometer_x", (float)magnet_x);
 	sendOscFloatMessage("/magnetometer_y", (float)magnet_y);
 	sendOscFloatMessage("/magnetometer_z", (float)magnet_z);
+	}
 
 
 	// sendOscMessage("/accelerometer",  String(accel_x)
@@ -1008,9 +935,40 @@ void drawGyroscopActivity(void)
 
 }
 
+void	update_sensors(t_sensors *sensors)
+{
+	sensors_event_t accel_event;
+	sensors_event_t mag_event;
+	accel.getEvent(&accel_event);
+	mag.getEvent(&mag_event);
+	gyro.read();
+
+	// sensors->accel.x = fmap(accel_event.acceleration.x, -40, 40, -100, 100);
+	// sensors->accel.y = fmap(accel_event.acceleration.y, -40, 40, -100, 100);
+	// sensors->accel.z = fmap(accel_event.acceleration.z, -40, 40, -100, 100);
+	// sensors->gyro.x = fmap(gyro.g.x, -37000, 37000, -100, 100);
+	// sensors->gyro.y = fmap(gyro.g.y, -37000, 37000, -100, 100);
+	// sensors->gyro.z = fmap(gyro.g.z, -37000, 37000, -100, 100);
+	// sensors->mag.x = fmap(mag_event.magnetic.x, -100, 100, -100, 100);
+	// sensors->mag.y = fmap(mag_event.magnetic.y, -100, 100, -100, 100);
+	// sensors->mag.z = fmap(mag_event.magnetic.z, -100, 100, -100, 100);
+
+
+	sensors->accel.x = accel_event.acceleration.x;
+	sensors->accel.y = accel_event.acceleration.y;
+	sensors->accel.z = accel_event.acceleration.z;
+	sensors->gyro.x = gyro.g.x;
+	sensors->gyro.y = gyro.g.y;
+	sensors->gyro.z = gyro.g.z;
+	sensors->mag.x = mag_event.magnetic.x;
+	sensors->mag.y = mag_event.magnetic.y;
+	sensors->mag.z = mag_event.magnetic.z;
+}
+
 void loop()
 {
-	if (current_mode == STA_MODE)
+	t_sensors sensors;
+	if (current_mode & NORM_MASK)
 	{
 		look_for_udp_message();
 		for (int i = 0; i < 3; i++)
@@ -1022,15 +980,25 @@ void loop()
 				pwmValues[i] = 0;
 			}
 		}
-		drawMotorsActivity();
+		update_sensors(&sensors);
+
+		// drawMotorsActivity();
+		if (current_mode == STA_MODE)
+		{
+			drawMotorsActivity(tft, pwmValues, localUdpPort, ssid);
+		}
+		else if (current_mode == SENSORS_MODE)
+		{
+			drawSensorsActivity(tft, sensors, oscAddress);
+		}
+		else if (current_mode == DFA_MODE)
+		{
+			drawAlpha(tft, sensors);
+		}
 	}
 	else if (current_mode == AP_MODE)
 	{
 		drawNetworkActivity();
-	}
-	else if (current_mode == GYRO_MODE)
-	{
-		drawGyroscopActivity();
 	}
 	//Serial.println(".");
 	delay(25);
