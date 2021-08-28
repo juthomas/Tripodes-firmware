@@ -82,7 +82,7 @@ void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort
 
 void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress);
 
-void drawAlpha(TFT_eSPI tft, t_sensors sensors);
+void drawAlpha(TFT_eSPI tft, float alpha);
 
 //dfa.cpp
 float mean(float *tab, size_t tab_size);

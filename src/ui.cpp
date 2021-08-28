@@ -308,100 +308,159 @@ void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress)
 
 }
 
-void printSign(TFT_eSprite drawing_sprite,int sign)
+void printSign(TFT_eSprite *drawing_sprite, float alpha)
 {
-	drawing_sprite.setCursor(0, 0);
-	drawing_sprite.printf("%s");
+	int16_t space = 12;
+	int16_t offset = 50;
+
+	if (alpha <= 0.6)
+	{
+		(*drawing_sprite).setCursor(0, offset);
+		(*drawing_sprite).printf("     ▐▌         ╟▌    ");
+		(*drawing_sprite).setCursor(0, offset + space * 1);
+		(*drawing_sprite).printf("     ▐▌         ╟▌    ");
+		(*drawing_sprite).setCursor(0, offset + space * 2);
+		(*drawing_sprite).printf("     ▐▌ uniform ╟▌    ");
+		(*drawing_sprite).setCursor(0, offset + space * 3);
+		(*drawing_sprite).printf("     ▐▌         ╟▌    ");
+		(*drawing_sprite).setCursor(0, offset + space * 4);
+		(*drawing_sprite).printf("     ▐▌         ╟▌    ");
+		(*drawing_sprite).setCursor(0, offset + space * 5);
+		(*drawing_sprite).printf("     ▐▌  a:%.2f ╟▌    ", alpha);
+		(*drawing_sprite).setCursor(0, offset + space * 6);
+		(*drawing_sprite).printf("     ▐▌         ╟▌    ");
+		(*drawing_sprite).setCursor(0, offset + space * 7);
+		(*drawing_sprite).printf("╓▄▄▄▄╫█▄▄▄▄▄▄▄▄▄█▄▄▄▄▄");
+		(*drawing_sprite).setCursor(0, offset + space * 8);
+		(*drawing_sprite).printf("     ▐▌         ╟▌    ");
+		(*drawing_sprite).setCursor(0, offset + space * 9);
+		(*drawing_sprite).printf("     ▐▌         ╟▌    ");
+		(*drawing_sprite).setCursor(0, offset + space * 10);
+		(*drawing_sprite).printf("     ▐█▄▄▄▄▄▄▄▄▄█▌    ");
+	}
+	else if (alpha < 0.9)
+	{
+		(*drawing_sprite).setCursor(0, offset);
+		(*drawing_sprite).printf("          ╟█           ");
+		(*drawing_sprite).setCursor(0, offset + space * 1);
+		(*drawing_sprite).printf("       regular         ");
+		(*drawing_sprite).setCursor(0, offset + space * 2);
+		(*drawing_sprite).printf("          ╟█           ");
+		(*drawing_sprite).setCursor(0, offset + space * 3);
+		(*drawing_sprite).printf("        a:%.2f         ", alpha);
+		(*drawing_sprite).setCursor(0, offset + space * 4);
+		(*drawing_sprite).printf("     █    ╟█    █       ");
+		(*drawing_sprite).setCursor(0, offset + space * 5);
+		(*drawing_sprite).printf("    █▌    ╟█    ▐█     ");
+		(*drawing_sprite).setCursor(0, offset + space * 6);
+		(*drawing_sprite).printf("   █▌ █▌  ╟█  ╓█  █▌    ");
+		(*drawing_sprite).setCursor(0, offset + space * 7);
+		(*drawing_sprite).printf("  █▌   █▌ ╟█ ╙█    █▌  ");
+		(*drawing_sprite).setCursor(0, offset + space * 8);
+		(*drawing_sprite).printf(" ██     █▌╟█┌█`    ╟█  ");
+		(*drawing_sprite).setCursor(0, offset + space * 9);
+		(*drawing_sprite).printf("▐█       ████▌      █▌ ");
+		(*drawing_sprite).setCursor(0, offset + space * 10);
+		(*drawing_sprite).printf("█         █ ▌        █▌");
+	}
+	else if (alpha <= 1.1)
+	{
+		(*drawing_sprite).setCursor(0, offset);
+		(*drawing_sprite).printf("    ▀█▄      ▄█▀    ");
+		(*drawing_sprite).setCursor(0, offset + space * 1);
+		(*drawing_sprite).printf("      ▀█▄  ▄█▀      ");
+		(*drawing_sprite).setCursor(0, offset + space * 2);
+		(*drawing_sprite).printf("        ▀██▀        ");
+		(*drawing_sprite).setCursor(0, offset + space * 3);
+		(*drawing_sprite).printf("         █▌         ");
+		(*drawing_sprite).setCursor(0, offset + space * 4);
+		(*drawing_sprite).printf("         █▌         ");
+		(*drawing_sprite).setCursor(0, offset + space * 5);
+		(*drawing_sprite).printf("        ████        ");
+		(*drawing_sprite).setCursor(0, offset + space * 6);
+		(*drawing_sprite).printf("      █▀    ▀█      ");
+		(*drawing_sprite).setCursor(0, offset + space * 7);
+		(*drawing_sprite).printf("▄▄▄▄█▀`       ▀█▄▄▄▄");
+		(*drawing_sprite).setCursor(0, offset + space * 8);
+		(*drawing_sprite).printf("   █▌  a:%.2f  ▐█   ", alpha);
+		(*drawing_sprite).setCursor(0, offset + space * 9);
+		(*drawing_sprite).printf("   █▌          ▐█   ");
+		(*drawing_sprite).setCursor(0, offset + space * 10);
+		(*drawing_sprite).printf("   ▀   fractl   ▀   ");
+	}
+	else
+	{
+		(*drawing_sprite).setCursor(0, offset);
+		(*drawing_sprite).printf(" ▀█▄             ▄█▀");
+		(*drawing_sprite).setCursor(0, offset + space * 1);
+		(*drawing_sprite).printf("   ▀█▄ a:%.2f  ▄█▀   ", alpha);
+		(*drawing_sprite).setCursor(0, offset + space * 2);
+		(*drawing_sprite).printf("    ▀█▄      ▄█▀▀▀▀▀ ");
+		(*drawing_sprite).setCursor(0, offset + space * 3);
+		(*drawing_sprite).printf("      ▀█▄  ▄█▀      ");
+		(*drawing_sprite).setCursor(0, offset + space * 4);
+		(*drawing_sprite).printf("          ██       ");
+		(*drawing_sprite).setCursor(0, offset + space * 5);
+		(*drawing_sprite).printf("       complex       ");
+		(*drawing_sprite).setCursor(0, offset + space * 6);
+		(*drawing_sprite).printf("          ██        ");
+		(*drawing_sprite).setCursor(0, offset + space * 7);
+		(*drawing_sprite).printf("          ██        ");
+		(*drawing_sprite).setCursor(0, offset + space * 8);
+		(*drawing_sprite).printf("          ██        ");
+		(*drawing_sprite).setCursor(0, offset + space * 9);
+		(*drawing_sprite).printf("     ▄▄█▀            ");
+		(*drawing_sprite).setCursor(0, offset + space * 10);
+		(*drawing_sprite).printf(" ▄▄█▀▀╙              ");
+	}
+
+
+    //          alpha_sign = "\
+ ▀█▄             ▄█▀ \n\
+   ▀█▄ "+b +"  ▄█▀   \n\
+    ▀█▄      ▄█▀▀▀▀▀ \n\
+      ▀█▄  ▄█▀       \n\
+        └█"+d+"─         \n\
+       " + c + "     \n\
+         ╟▌          \n\
+         ╟▌          \n\
+        "+a+"        \n\
+         ╟▌          \n\
+     ▄▄█▀"+s+"          \n\
+ ▄▄█▀▀╙  "+m+"       "     
+
+//              alpha_sign = "\
+           ╟█           \n\
+           ╟█           \n\
+           ╟█           \n\
+           ╟█           \n\
+      █    ╟█    █       \n\
+     █▌    ╟█    ▐█     \n\
+    █▌ █▌  ╟█  ╓█  █    \n\
+   █▌   █▌ ╟█ ╙█    █▌  \n\
+  ██     █▌╟█┌█`    ╟█  \n\
+ ▐█       ████▌      █▌ \n\
+╓█         █ ▌        █▌"
+
+	// (*drawing_sprite).printf("eewewfwe");
+
+// 	char *                alpha_sign = "\
+//      ▐▌         ╟▌    \n\
+//      ▐▌         ╟▌    \n\
+//      ▐▌         ╟▌    \n\
+//      ▐▌         ╟▌    \n\ //2
+//      ▐▌         ╟▌    \n\
+//      ▐▌         ╟▌    \n\
+//      ▐▌         ╟▌    \n\
+// ╓▄▄▄▄╫█▄▄▄▄▄▄▄▄▄█▄▄▄▄▄\n\
+//      ▐▌         ╟▌    \n\
+//      ▐▌         ╟▌    \n\
+//      ▐█▄▄▄▄▄▄▄▄▄█▌    "
 
 }
 
-float updateDFA(t_sensors sensors)
-{
-	static float *x = 0;
-	static float *x_tmp = 0;
-	static float *alpha_mean = 0;
 
-
-
-	size_t size_x = 400;
-	size_t size_tmp_x = 20;
-	size_t size_alpha_mean = 50;
-	static size_t current_index = 0;
-	static size_t current_alpha_index = 0;
-
-	if (x == 0)
-	{
-		x = (float*)malloc(sizeof(float) * size_x);
-		x_tmp = (float*)malloc(sizeof(float) * size_x);
-		alpha_mean = (float*)malloc(sizeof(float) * size_alpha_mean);
-		for (size_t i = 0; i < size_x; i++)
-		{
-			x[i] = 0.0;
-		}
-		for (size_t i = 0; i < size_alpha_mean; i++)
-		{
-			alpha_mean[i] = 0.0;
-		}
-	}
-	x[current_index] = map(sqrtf(sensors.gyro.x * sensors.gyro.x \
-		 + sensors.gyro.y * sensors.gyro.y \
-		 + sensors.gyro.z * sensors.gyro.z), 0, 37000, 0, 100);
-	for (size_t i = 0; i < size_x; i++)
-	{
-		x_tmp[size_x - i - 1] = x[(current_index - i) % size_x];
-	}
-
-	for (size_t i = 0; i < size_tmp_x; i++)
-	{
-		size_t beg_i = map(i, 0, size_tmp_x, 0, size_x);
-		float max = 0;
-		for (size_t j = 0; j < size_x / size_tmp_x; j++)
-		{
-			if (max < x_tmp[beg_i + j])
-			{
-				max = x_tmp[beg_i + j];
-			}
-		}
-		x_tmp[i] = max;
-		// Serial.printf("%f, ", max);
-	}
-	// Serial.printf("\n");
-
-	// Serial.printf("current index : %d\n", current_index);
-	// for (size_t i = 0; i < size_x; i++)
-	// {
-	// 	Serial.printf("x_tmp[%d] : %f ", i, x_tmp[i]);
-	// 	Serial.printf("x[%d] : %f\n", i, x[i]);
-	// }
-	
-	current_index = current_index >= size_x -1 ? 0 : current_index + 1;
-
-	// printf("Dfa : %f\n", dfa(x, sizeof(x) / 4, 1, 4, 0.5));
-
-
-	// float dfa_value = dfa(x_tmp, size_tmp_x, 2, 4.5, 0.5);
-	float dfa_value = dfa(x_tmp, size_tmp_x, 1, 4, 0.2);
-	dfa_value = abs(dfa_value);
-
-	alpha_mean[current_alpha_index] = dfa_value;
-// 
-	dfa_value = mean(alpha_mean, size_alpha_mean);
-
-	current_alpha_index = current_alpha_index >= size_alpha_mean ? 0 : current_alpha_index + 1;
-
-	if (dfa_value >= 0.5 && dfa_value <= 3)
-	{
-		dfa_value = 0.4342523523;
-	}
-	dfa_value = fmap(dfa_value, 0, 15, 0, 1.5);
-	// dfa_value = dfa_value * dfa_value;
-	// Serial.printf("Alpha : %f\n", dfa_value);
-	return (dfa_value);
-	// return (dfa(x_tmp, size_x, 4, 10, 0.1));
-	// dfa(x, sizeof(x) / 4, 2, 4.5, 0.5));
-}
-
-void drawAlpha(TFT_eSPI tft, t_sensors sensors)
+void drawAlpha(TFT_eSPI tft, float alpha)
 {
 	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
 	drawing_sprite.setColorDepth(8);
@@ -410,11 +469,14 @@ void drawAlpha(TFT_eSPI tft, t_sensors sensors)
 	drawing_sprite.fillSprite(TFT_BLACK);
 	drawing_sprite.setTextSize(1);
 	drawing_sprite.setTextFont(1);
-	drawing_sprite.setTextColor(TFT_GREEN);
+	drawing_sprite.setTextColor(TFT_WHITE);
 	drawing_sprite.setTextDatum(MC_DATUM);
 	drawing_sprite.setCursor(0, 0);
 
-	char *        alpha_sign = "\
+	printSign(&drawing_sprite, alpha);
+
+
+// 	char *        alpha_sign = "\
     ▀█▄      ▄█▀    \n\n\
       ▀█▄  ▄█▀      \n\n\
         ▀██▀        \n\n\
@@ -426,24 +488,23 @@ void drawAlpha(TFT_eSPI tft, t_sensors sensors)
    █▌          ▐█   \n\n\
    █▌          ▐█   \n\n\
    ▀            ▀   ";
-	drawing_sprite.printf("%s", alpha_sign);
-	// drawing_sprite.printf("\n%d",fmap(sqrtf(sensors.gyro.x * sensors.gyro.x \
+	// drawing_sprite.printf("%s", alpha_sign);
+	// // drawing_sprite.printf("\n%d",fmap(sqrtf(sensors.gyro.x * sensors.gyro.x \
+	// // 	 + sensors.gyro.y * sensors.gyro.y \
+	// // 	 + sensors.gyro.z * sensors.gyro.z), 0, 37000, 0, 100));
+	// float gyroscope = map(sqrtf(sensors.gyro.x * sensors.gyro.x \
 	// 	 + sensors.gyro.y * sensors.gyro.y \
-	// 	 + sensors.gyro.z * sensors.gyro.z), 0, 37000, 0, 100));
-	float gyroscope = map(sqrtf(sensors.gyro.x * sensors.gyro.x \
-		 + sensors.gyro.y * sensors.gyro.y \
-		 + sensors.gyro.z * sensors.gyro.z), 0, 37000, 0, 100);
+	// 	 + sensors.gyro.z * sensors.gyro.z), 0, 37000, 0, 100);
 
-	drawing_sprite.printf("\n%f", gyroscope);
 	
-	static int32_t last_time = 0;
-	drawing_sprite.printf("\n%d", (int32_t)(esp_timer_get_time() / 1000));
+	// static int32_t last_time = 0;
+	// drawing_sprite.printf("\n%d", (int32_t)(esp_timer_get_time() / 1000));
 	
-	drawing_sprite.printf("\nlast time :%d", (int32_t)(esp_timer_get_time() / 1000) - last_time);
-	last_time = (esp_timer_get_time() / 1000) ;
+	// drawing_sprite.printf("\nlast time :%d", (int32_t)(esp_timer_get_time() / 1000) - last_time);
+	// last_time = (esp_timer_get_time() / 1000) ;
 
-	float alpha = updateDFA(sensors);
-	drawing_sprite.printf("\nDFA : %f", alpha);
+	// float alpha = updateDFA(sensors);
+	// drawing_sprite.printf("\nDFA : %f", alpha);
 
 	if (alpha <= 0.60)
 	{

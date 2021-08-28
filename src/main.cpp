@@ -2,6 +2,7 @@
 #include "tripodes.h"
 // #include <Adafruit_L3GD20_U.h>
 
+//perf8888
 const char *ssid = "tripodesAP";
 const char *password = "44448888";
 
@@ -694,7 +695,7 @@ void sendOscMessage(char *oscPrefix, String oscMessage)
 	msg.empty();
 }
 
-void sendOscFloatMessage(char *oscPrefix, float oscMessage)
+void sendOscFloatMessage(char *oscPrefix, float oscMessage, const IPAddress ipOut, const uint32_t portOut)
 {
 	OSCMessage msg(oscPrefix);
 	// String message = String(accel_event.acceleration.x, 3)
@@ -705,7 +706,8 @@ void sendOscFloatMessage(char *oscPrefix, float oscMessage)
 	// oscMessage.toCharArray(messageBuffer, 50);
 	// Serial.println(oscMessage);
 	msg.add(oscMessage);
-	Udp.beginPacket(outIp, outPort);
+	// Udp.beginPacket(outIp, outPort);
+	Udp.beginPacket(ipOut, portOut);
 	msg.send(Udp);
 	Udp.endPacket();
 	msg.empty();
@@ -905,19 +907,19 @@ void drawGyroscopActivity(void)
 	if (0)
 	{
 
-	sendOscFloatMessage("/accelerometer_x", (float)accel_x);
-	sendOscFloatMessage("/accelerometer_y", (float)accel_y);
-	sendOscFloatMessage("/accelerometer_z", (float)accel_z);
-	sendOscFloatMessage("/accelerometer_normal", (float)accel_normal);
+	// sendOscFloatMessage("/accelerometer_x", (float)accel_x);
+	// sendOscFloatMessage("/accelerometer_y", (float)accel_y);
+	// sendOscFloatMessage("/accelerometer_z", (float)accel_z);
+	// sendOscFloatMessage("/accelerometer_normal", (float)accel_normal);
 
-	sendOscFloatMessage("/gyroscope_x", (float)gyro_x);
-	sendOscFloatMessage("/gyroscope_y", (float)gyro_y);
-	sendOscFloatMessage("/gyroscope_z", (float)gyro_z);
-	sendOscFloatMessage("/gyroscope_normal", (float)gyro_normal);
+	// sendOscFloatMessage("/gyroscope_x", (float)gyro_x);
+	// sendOscFloatMessage("/gyroscope_y", (float)gyro_y);
+	// sendOscFloatMessage("/gyroscope_z", (float)gyro_z);
+	// sendOscFloatMessage("/gyroscope_normal", (float)gyro_normal);
 
-	sendOscFloatMessage("/magnetometer_x", (float)magnet_x);
-	sendOscFloatMessage("/magnetometer_y", (float)magnet_y);
-	sendOscFloatMessage("/magnetometer_z", (float)magnet_z);
+	// sendOscFloatMessage("/magnetometer_x", (float)magnet_x);
+	// sendOscFloatMessage("/magnetometer_y", (float)magnet_y);
+	// sendOscFloatMessage("/magnetometer_z", (float)magnet_z);
 	}
 
 
@@ -965,6 +967,116 @@ void	update_sensors(t_sensors *sensors)
 	sensors->mag.z = mag_event.magnetic.z;
 }
 
+void sendOscMessage(t_sensors *sensors, const IPAddress ipOut, const uint32_t portOut)
+{
+	// Udp.beginPacket(, outIp, outPort);
+
+	sendOscFloatMessage("/accelerometer_x", (float)sensors->accel.x, ipOut, portOut);
+	sendOscFloatMessage("/accelerometer_y", (float)sensors->accel.y, ipOut, portOut);
+	sendOscFloatMessage("/accelerometer_z", (float)sensors->accel.z, ipOut, portOut);
+	sendOscFloatMessage("/accelerometer_normal", (float)sqrt(sensors->accel.x * sensors->accel.x
+									+ sensors->accel.y * sensors->accel.y
+									+ sensors->accel.z * sensors->accel.z), ipOut, portOut);
+
+	sendOscFloatMessage("/gyroscope_x", (float)sensors->gyro.x, ipOut, portOut);
+	sendOscFloatMessage("/gyroscope_y", (float)sensors->gyro.y, ipOut, portOut);
+	sendOscFloatMessage("/gyroscope_z", (float)sensors->gyro.z, ipOut, portOut);
+	sendOscFloatMessage("/gyroscope_normal", (float)sqrt(sensors->gyro.x * sensors->gyro.x
+									+ sensors->gyro.y * sensors->gyro.y
+									+ sensors->gyro.z * sensors->gyro.z), ipOut, portOut);
+
+	sendOscFloatMessage("/magnetometer_x", (float)sensors->mag.x, ipOut, portOut);
+	sendOscFloatMessage("/magnetometer_y", (float)sensors->mag.y, ipOut, portOut);
+	sendOscFloatMessage("/magnetometer_z", (float)sensors->mag.z, ipOut, portOut);
+}
+
+
+float updateDFA(t_sensors sensors)
+{
+	static float *x = 0;
+	static float *x_tmp = 0;
+	static float *alpha_mean = 0;
+
+
+
+	size_t size_x = 400;
+	size_t size_tmp_x = 20;
+	size_t size_alpha_mean = 50;
+	static size_t current_index = 0;
+	static size_t current_alpha_index = 0;
+
+	if (x == 0)
+	{
+		x = (float*)malloc(sizeof(float) * size_x);
+		x_tmp = (float*)malloc(sizeof(float) * size_x);
+		alpha_mean = (float*)malloc(sizeof(float) * size_alpha_mean);
+		for (size_t i = 0; i < size_x; i++)
+		{
+			x[i] = 0.0;
+		}
+		for (size_t i = 0; i < size_alpha_mean; i++)
+		{
+			alpha_mean[i] = 0.0;
+		}
+	}
+	x[current_index] = map(sqrtf(sensors.gyro.x * sensors.gyro.x \
+		 + sensors.gyro.y * sensors.gyro.y \
+		 + sensors.gyro.z * sensors.gyro.z), 0, 37000, 0, 100);
+	for (size_t i = 0; i < size_x; i++)
+	{
+		x_tmp[size_x - i - 1] = x[(current_index - i) % size_x];
+	}
+
+	for (size_t i = 0; i < size_tmp_x; i++)
+	{
+		size_t beg_i = map(i, 0, size_tmp_x, 0, size_x);
+		float max = 0;
+		for (size_t j = 0; j < size_x / size_tmp_x; j++)
+		{
+			if (max < x_tmp[beg_i + j])
+			{
+				max = x_tmp[beg_i + j];
+			}
+		}
+		x_tmp[i] = max;
+		// Serial.printf("%f, ", max);
+	}
+	// Serial.printf("\n");
+
+	// Serial.printf("current index : %d\n", current_index);
+	// for (size_t i = 0; i < size_x; i++)
+	// {
+	// 	Serial.printf("x_tmp[%d] : %f ", i, x_tmp[i]);
+	// 	Serial.printf("x[%d] : %f\n", i, x[i]);
+	// }
+	
+	current_index = current_index >= size_x -1 ? 0 : current_index + 1;
+
+	// printf("Dfa : %f\n", dfa(x, sizeof(x) / 4, 1, 4, 0.5));
+
+
+	// float dfa_value = dfa(x_tmp, size_tmp_x, 2, 4.5, 0.5);
+	float dfa_value = dfa(x_tmp, size_tmp_x, 1, 4, 0.2);
+	dfa_value = abs(dfa_value);
+
+	alpha_mean[current_alpha_index] = dfa_value;
+// 
+	dfa_value = mean(alpha_mean, size_alpha_mean);
+
+	current_alpha_index = current_alpha_index >= size_alpha_mean ? 0 : current_alpha_index + 1;
+
+	// if (dfa_value >= 0.5 && dfa_value <= 3)
+	// {
+	// 	dfa_value = 0.4342523523;
+	// }
+	dfa_value = fmap(dfa_value, 0, 18, 0, 1.5);
+	// dfa_value = dfa_value * dfa_value;
+	// Serial.printf("Alpha : %f\n", dfa_value);
+	return (dfa_value);
+	// return (dfa(x_tmp, size_x, 4, 10, 0.1));
+	// dfa(x, sizeof(x) / 4, 2, 4.5, 0.5));
+}
+
 void loop()
 {
 	t_sensors sensors;
@@ -981,8 +1093,9 @@ void loop()
 			}
 		}
 		update_sensors(&sensors);
+		float dfa_value = updateDFA(sensors);
+		sendOscMessage(&sensors, outIp, outPort);
 
-		// drawMotorsActivity();
 		if (current_mode == STA_MODE)
 		{
 			drawMotorsActivity(tft, pwmValues, localUdpPort, ssid);
@@ -993,7 +1106,7 @@ void loop()
 		}
 		else if (current_mode == DFA_MODE)
 		{
-			drawAlpha(tft, sensors);
+			drawAlpha(tft, dfa_value);
 		}
 	}
 	else if (current_mode == AP_MODE)
