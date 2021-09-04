@@ -50,6 +50,43 @@
 
 #define VREF 1100
 
+#define SCALE_DFA 1
+#define SCALE_DFA_TRESHOLD 3
+
+#define TRIPODE_ID "1_1"
+// #define FRACTAL_STATE_POS "10;10"
+#define FRACTAL_STATE_POS_X 0
+// #define FRACTAL_STATE_POS_X 12
+// #define FRACTAL_STATE_POS_X 24
+#define FRACTAL_STATE_POS_Y 10
+#define UDP_DRAWING 1
+#define UPD_INIT_ORCA 1
+// #define UPD_INIT_ORCA 1
+#define GLYPH_X_POS 48
+
+#define GLYPH_Y_POS 6
+// #define GLYPH_Y_POS 35
+// #define GLYPH_Y_POS 64
+//29
+
+//4 => 140
+//3 => 150
+
+const IPAddress local_IP(10, 87, 210, 202);
+
+
+const uint16_t updMessageRate = 60; // 1/Rate => 20 = 1bang/2secs
+const uint16_t updDrawRate = 300; // 1/Rate => 20 = 1bang/2secs
+
+// const IPAddress KooOutIp(10,0,1,14);
+const IPAddress KooOutIp(10,0,1,14);
+const unsigned int KooOutPort = 2002;          // remote port to receive OSC
+//1  2  3  4
+//6, 7, 5, 12
+const IPAddress Rasp1OutIp(10,87,210,255);   // Raspi4 local addr
+// const IPAddress Rasp1OutIp(10,87,210,255);   // Raspi4 local addr
+// const IPAddress Rasp1OutIp(10,87,208,68);   // Raspi4 local addr
+const unsigned int Rasp1OutPort = 49160;       // Orca input port
 
 float	dfa(float *x, size_t size_x, float min_scale, float max_scale, float scale_dens);
 
@@ -78,11 +115,12 @@ void drawCursors(TFT_eSprite *sprite, int x, int y, int w, int h, int min, int m
 
 void drawBatteryLevel(TFT_eSprite *sprite, int x, int y, float voltage);
 
-void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort, const char *ssid);
 
-void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress);
+void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort, const char *ssid, bool is_upd_sending);
 
-void drawAlpha(TFT_eSPI tft, float alpha);
+void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool is_upd_sending);
+
+void drawAlpha(TFT_eSPI tft, float alpha, bool is_upd_sending);
 
 //dfa.cpp
 float mean(float *tab, size_t tab_size);

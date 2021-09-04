@@ -1,10 +1,20 @@
 
 #include "tripodes.h"
-// #include <Adafruit_L3GD20_U.h>
+// #include <ESP32Ping.h>
 
+// #include <Adafruit_L3GD20_U.h>
+//tripod
 //perf8888
-const char *ssid = "tripodesAP";
-const char *password = "44448888";
+// const char *ssid = "tripodesAP";
+// const char *password = "44448888";
+// const char *ssid = "tripod";
+// const char *password = "perf8888";
+// const char *ssid = "Thinking Sound 2.4g";
+// const char *password = "rock&roll";
+const char *ssid = "ECCOmobile";
+const char *password = "ECCOmobile";
+
+
 
 // const char *ssid = "Dourr";
 // const char *password = "Akiraestlepluscooldeschien28os";
@@ -54,6 +64,7 @@ Button2 btn1(BUTTON_1);
 Button2 btn2(BUTTON_2);
 
 e_wifi_modes current_mode;
+bool upd_sending = true;
 // const char* ssid = "Freebox-0E3EAE";
 // const char* password =  "taigaest1chien";
 
@@ -193,10 +204,6 @@ void IRAM_ATTR button1_handler(Button2 &btn)
 			{
 				current_mode = STA_MODE;
 			}
-			// oscAddress = oscAddress < 99999 ? oscAddress + 1 : 99999;
-			// oscAddressChanged = true;
-			// // EEPROM.writeUInt(10, oscAddress);
-			// // EEPROM.commit();
 		}
 	}
 }
@@ -214,22 +221,23 @@ void IRAM_ATTR button2_handler(Button2 &btn)
 		}
 		else if (current_mode & NORM_MASK)
 		{
+			upd_sending = !upd_sending;
 			// oscAddress = oscAddress > 0 ? oscAddress - 1 : 0;
 			// oscAddressChanged = true;
 			// // EEPROM.writeUInt(10, oscAddress);
 			// // EEPROM.commit();
-			if (current_mode == STA_MODE)
-			{
-				current_mode = DFA_MODE;
-			}
-			else if (current_mode == SENSORS_MODE)
-			{
-				current_mode = STA_MODE;
-			}
-			else if (current_mode == DFA_MODE)
-			{
-				current_mode = SENSORS_MODE;
-			}
+			// if (current_mode == STA_MODE)
+			// {
+			// 	current_mode = DFA_MODE;
+			// }
+			// else if (current_mode == SENSORS_MODE)
+			// {
+			// 	current_mode = STA_MODE;
+			// }
+			// else if (current_mode == DFA_MODE)
+			// {
+			// 	current_mode = SENSORS_MODE;
+			// }
 
 		}
 	}
@@ -283,7 +291,19 @@ void showVoltage()
 
 void sta_setup()
 {
+// Set your Static IP address
+// Set your Gateway IP address
+IPAddress gateway(10, 0, 1, 1);
+
+IPAddress subnet(255, 255, 0, 0);
+
 	WiFi.mode(WIFI_STA);
+
+	//Static ip attributon
+	// WiFi.config(local_IP, gateway, subnet);
+
+
+
 	WiFi.begin(ssid, password);
 	tft.drawString("Connecting", tft.width() / 2, tft.height() / 2);
 	uint64_t timeStamp = millis();
@@ -298,7 +318,7 @@ void sta_setup()
 	Serial.println("Connecting");
 	while (WiFi.status() != WL_CONNECTED)
 	{
-		if (millis() - timeStamp > 10000)
+		if (millis() - timeStamp > 60000)
 		{
 			ESP.restart();
 			tft.fillScreen(TFT_BLACK);
@@ -695,9 +715,21 @@ void sendOscMessage(char *oscPrefix, String oscMessage)
 	msg.empty();
 }
 
+
+
 void sendOscFloatMessage(char *oscPrefix, float oscMessage, const IPAddress ipOut, const uint32_t portOut)
 {
-	OSCMessage msg(oscPrefix);
+	char *tmpOscPrefix = 0;
+	tmpOscPrefix = (char*)malloc(sizeof(char) * (strlen(oscPrefix) + 10));
+
+	strcpy(tmpOscPrefix, oscPrefix);
+	strcat(tmpOscPrefix, "_");
+	strcat(tmpOscPrefix, TRIPODE_ID);
+	// OSCMessage msg(oscPrefix);
+	OSCMessage msg(tmpOscPrefix);
+
+
+
 	// String message = String(accel_event.acceleration.x, 3)
 	// 		+ " " + String(accel_event.acceleration.y, 3)
 	// 		+ " " + String(accel_event.acceleration.z, 3);
@@ -711,8 +743,86 @@ void sendOscFloatMessage(char *oscPrefix, float oscMessage, const IPAddress ipOu
 	msg.send(Udp);
 	Udp.endPacket();
 	msg.empty();
+	free(tmpOscPrefix);
 }
 
+
+void sendUpdMessage(const char *buffer, const IPAddress ipOut, const uint32_t portOut)
+{
+	// Udp.beginPacket(ipOut, outPort);
+	Udp.beginPacket(ipOut, portOut);
+	// Udp.write(buffer, buffer_size);
+	Udp.printf(buffer);
+	// Udp.write('E');
+	Udp.endPacket();
+}
+
+void sendUpdAplhaMessage(float alpha, const IPAddress ipOut, const uint32_t portOut)
+{
+	// Udp.beginPacket(ipOut, outPort);
+	Udp.beginPacket(ipOut, portOut);
+	// Udp.write(buffer, buffer_size);
+	Udp.printf("write:E;0;%d", (int)((alpha) * 100));
+	// Udp.write('E');
+	Udp.endPacket();
+	// delay(1000);
+}
+
+char convertBase35ToChar(int nb)
+{
+	if (nb < 0)
+	{
+		return ('0');
+	}
+	if (nb > 35)
+	{
+		return ('z');
+	}
+	if (nb < 10)
+	{
+		return ('0' + nb);
+	}
+	else
+	{
+		return ('a' + nb - 10);
+	}
+}
+
+void sendUdpFractalState(float alpha, const IPAddress ipOut, const uint32_t portOut)
+{
+	//VABCD
+	char letter = ' ';
+	if (alpha <= 0.6)
+		letter = 'A';
+	else if (alpha < 0.9)
+		letter = 'B';
+	else if (alpha <= 1.1)
+		letter = 'C';
+	else
+		letter = 'D';
+	char speed = '9';
+	int base35 = (int)fmap(alpha, 0, 1.5, 0, 35);
+
+
+	Udp.beginPacket(ipOut, portOut);
+	Udp.printf("write:2C9\n"
+					 " 2%cTE\n"
+					 "    \n"
+					 "%cR%cJ\n"
+					 "  X;%d;%d",speed, convertBase35ToChar(base35), convertBase35ToChar(base35 + 5), FRACTAL_STATE_POS_X, FRACTAL_STATE_POS_Y);
+
+
+	// Udp.printf("write:%cR%c\n  XE;%d;%d", convertBase35ToChar(base35), convertBase35ToChar(base35 + 5), FRACTAL_STATE_POS_X, FRACTAL_STATE_POS_Y);
+	Udp.endPacket();
+	
+}
+
+void sendOrcaLine(char *line, uint16_t x, uint16_t y, const IPAddress ipOut, const uint32_t portOut)
+{
+	Udp.beginPacket(ipOut, portOut);
+	Udp.printf("write:%s;%d;%d", line, x, y);
+	Udp.endPacket();
+}
 
 void drawGyroscopActivity(void)
 {
@@ -967,9 +1077,11 @@ void	update_sensors(t_sensors *sensors)
 	sensors->mag.z = mag_event.magnetic.z;
 }
 
-void sendOscMessage(t_sensors *sensors, const IPAddress ipOut, const uint32_t portOut)
+void sendOscMessage(float dfa_value, t_sensors *sensors, const IPAddress ipOut, const uint32_t portOut)
 {
 	// Udp.beginPacket(, outIp, outPort);
+
+	sendOscFloatMessage("/dfa", (float)dfa_value, ipOut, portOut);
 
 	sendOscFloatMessage("/accelerometer_x", (float)sensors->accel.x, ipOut, portOut);
 	sendOscFloatMessage("/accelerometer_y", (float)sensors->accel.y, ipOut, portOut);
@@ -1072,10 +1184,167 @@ float updateDFA(t_sensors sensors)
 	dfa_value = fmap(dfa_value, 0, 18, 0, 1.5);
 	// dfa_value = dfa_value * dfa_value;
 	// Serial.printf("Alpha : %f\n", dfa_value);
+
+
+	if (SCALE_DFA == 1)
+	{
+		if (mean(x_tmp, size_tmp_x) < SCALE_DFA_TRESHOLD)
+		{
+			dfa_value /= fmap(mean(x_tmp, size_tmp_x), 0, SCALE_DFA_TRESHOLD, 6, 1);
+		}
+	}
+
 	return (dfa_value);
 	// return (dfa(x_tmp, size_x, 4, 10, 0.1));
 	// dfa(x, sizeof(x) / 4, 2, 4.5, 0.5));
 }
+
+// void sendOrcaLine(char *line, uint16_t x, uint16_t y, uint16_t size, const IPAddress ipOut, const uint32_t portOut)
+void drawInOrca(float alpha, const IPAddress ipOut, const uint32_t portOut)
+{
+
+	if (alpha <= 0.6)
+	{
+	sendOrcaLine("  R                                                \n"
+                 "2X                                                 \n"
+                 "                                                   \n"
+                 "  CO                                               \n"
+                 "   8G  X                                           \n", GLYPH_X_POS, GLYPH_Y_POS, ipOut, portOut);
+	sendOrcaLine("      #XX#                    #XXXXXX#    #XXXXXX# \n"
+                 "      #XX#                    #XXXXXX#    #XXXXXX# \n"
+                 "      #XX#                    #XXXXXX#    #XXXXXX# \n"
+                 "      #XXXXXX#                    #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#                    #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#                    #XX#    #XXXXXX# \n"
+                 "                                          #XX#     \n"
+                 "                                          #XX#     \n"
+                 "                                          #XX#     \n"
+                 "      #XX#                    #XXXXXX#    #XX#     \n"
+                 "      #XX#                    #XXXXXX#    #XX#     \n"
+                 "      #XX#                    #XXXXXX#    #XX#     \n", GLYPH_X_POS, GLYPH_Y_POS + 5, ipOut, portOut);
+    sendOrcaLine("      #XX#                    #XXXXXX#    #XX#     \n"
+                 "      #XX#                    #XXXXXX#    #XX#     \n"
+                 "      #XX#                    #XXXXXX#    #XX#     \n"
+                 "      #XXXXXX#                    #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#                    #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#                    #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#                #XXXXXX#    #XXXXXX# \n"
+                 "      #XXXXXX#                #XXXXXX#    #XXXXXX# \n"
+                 "      #XXXXXX#                #XXXXXX#    #XXXXXX# \n"
+                 "      #XXXXXX#                    #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#                    #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#                    #XX#    #XXXXXX# \n", GLYPH_X_POS, GLYPH_Y_POS + 17, ipOut, portOut);
+	}
+	else if (alpha <= 0.9)
+	{
+	sendOrcaLine("  R                                                \n"
+                 "2X                                                 \n"
+                 "                                                   \n"
+                 "  CO                                               \n"
+                 "   8G  X                                           \n", GLYPH_X_POS, GLYPH_Y_POS, ipOut, portOut);
+	sendOrcaLine("      #XX#        #XX#        #XXXXXX#    #XXXXXX# \n"
+                 "      #XX#        #XX#        #XXXXXX#    #XXXXXX# \n"
+                 "      #XX#        #XX#        #XXXXXX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n"
+                 "                                          #XX#     \n"
+                 "                                          #XX#     \n"
+                 "                                          #XX#     \n"
+                 "      #XX#        #XXXXXX#                #XX#     \n"
+                 "      #XX#        #XXXXXX#                #XX#     \n"
+                 "      #XX#        #XXXXXX#                #XX#     \n", GLYPH_X_POS, GLYPH_Y_POS + 5, ipOut, portOut);
+    sendOrcaLine("      #XX#        #XXXXXX#                #XX#     \n"
+                 "      #XX#        #XXXXXX#                #XX#     \n"
+                 "      #XX#        #XXXXXX#                #XX#     \n"
+                 "      #XXXXXX#        #XX#                #XXXXXX# \n"
+                 "      #XXXXXX#        #XX#                #XXXXXX# \n"
+                 "      #XXXXXX#        #XX#                #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#                #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#                #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#                #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#                #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#                #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#                #XXXXXX# \n", GLYPH_X_POS, GLYPH_Y_POS + 17, ipOut, portOut);
+	}
+	else if (alpha <= 1.1)
+	{
+	sendOrcaLine("  R                                                \n"
+                 "2X                                                 \n"
+                 "                                                   \n"
+                 "  CO                                               \n"
+                 "   8G  X                                           \n", GLYPH_X_POS, GLYPH_Y_POS, ipOut, portOut);
+	sendOrcaLine("                  #XX#        #XXXXXX#    #XXXXXX# \n"
+                 "                  #XX#        #XXXXXX#    #XXXXXX# \n"
+                 "                  #XX#        #XXXXXX#    #XXXXXX# \n"
+                 "                  #XXXXXX#        #XX#    #XXXXXX# \n"
+                 "                  #XXXXXX#        #XX#    #XXXXXX# \n"
+                 "                  #XXXXXX#        #XX#    #XXXXXX# \n"
+                 "                                          #XX#     \n"
+                 "                                          #XX#     \n"
+                 "                                          #XX#     \n"
+                 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
+                 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
+                 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n", GLYPH_X_POS, GLYPH_Y_POS + 5, ipOut, portOut);
+    sendOrcaLine("      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
+                 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
+                 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
+                 "      #XXXXXX#        #XX#        #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#        #XX#        #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#        #XX#        #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#    #XXXXXX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#    #XXXXXX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#    #XXXXXX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n", GLYPH_X_POS, GLYPH_Y_POS + 17, ipOut, portOut);
+	}
+	else
+	{
+	sendOrcaLine("  R                                                \n"
+                 "2X                                                 \n"
+                 "                                                   \n"
+                 "  CO                                               \n"
+                 "   8G  X                                           \n", GLYPH_X_POS, GLYPH_Y_POS, ipOut, portOut);
+	sendOrcaLine("      #XX#        #XX#        #XXXXXX#    #XXXXXX# \n"
+                 "      #XX#        #XX#        #XXXXXX#    #XXXXXX# \n"
+                 "      #XX#        #XX#        #XXXXXX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n"
+                 "                                          #XX#     \n"
+                 "                                          #XX#     \n"
+                 "                                          #XX#     \n"
+                 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
+                 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
+                 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n", GLYPH_X_POS, GLYPH_Y_POS + 5, ipOut, portOut);
+    sendOrcaLine("      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
+                 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
+                 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
+                 "      #XXXXXX#        #XX#        #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#        #XX#        #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#        #XX#        #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#    #XXXXXX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#    #XXXXXX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#    #XXXXXX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n"
+                 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n", GLYPH_X_POS, GLYPH_Y_POS + 17, ipOut, portOut);
+	}
+}
+
+void udpInitOrca(const IPAddress ipOut, const uint32_t portOut)
+{
+    // sendOrcaLine("              #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n", 20, 0, ipOut, portOut);
+	
+	for (uint16_t y = 0; y < 100; y++)
+	{
+		Udp.beginPacket(ipOut, portOut);
+		Udp.printf("write:;#%dD300I255P1;%d;%d", y % 3, 20, y + 10);
+		Udp.endPacket();
+	}
+}
+
 
 void loop()
 {
@@ -1094,19 +1363,41 @@ void loop()
 		}
 		update_sensors(&sensors);
 		float dfa_value = updateDFA(sensors);
-		sendOscMessage(&sensors, outIp, outPort);
+		// const IPAddress KooOutIp(192,168,100,100);
+		// const unsigned int KooOutPort = 2002;          // remote port to receive OSC
+		sendOscMessage(dfa_value, &sensors, KooOutIp, KooOutPort);
+
+		// sendUpdMessage((const char*)"write:E;18;8", Rasp1OutIp, Rasp1OutPort);
+		static uint16_t loop_counter = 0;
+		if (upd_sending)
+		{
+			if (loop_counter % updMessageRate == 0)
+			{
+				sendUpdMessage("select:0;0", Rasp1OutIp, Rasp1OutPort);
+				sendUdpFractalState(dfa_value, Rasp1OutIp, Rasp1OutPort);
+				// sendUpdAplhaMessage(dfa_value, Rasp1OutIp, Rasp1OutPort);
+			}
+			if (loop_counter % updDrawRate == 0 && UDP_DRAWING == 1)
+			{
+				//  udpInitOrca(Rasp1OutIp, Rasp1OutPort);
+
+				drawInOrca(dfa_value, Rasp1OutIp, Rasp1OutPort);
+			}
+			loop_counter = loop_counter > 1000 ? 0 : loop_counter + 1;
+		}
+
 
 		if (current_mode == STA_MODE)
 		{
-			drawMotorsActivity(tft, pwmValues, localUdpPort, ssid);
+			drawMotorsActivity(tft, pwmValues, localUdpPort, ssid, upd_sending);
 		}
 		else if (current_mode == SENSORS_MODE)
 		{
-			drawSensorsActivity(tft, sensors, oscAddress);
+			drawSensorsActivity(tft, sensors, oscAddress, upd_sending);
 		}
 		else if (current_mode == DFA_MODE)
 		{
-			drawAlpha(tft, dfa_value);
+			drawAlpha(tft, dfa_value, upd_sending);
 		}
 	}
 	else if (current_mode == AP_MODE)

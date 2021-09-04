@@ -60,9 +60,14 @@ void drawBatteryLevel(TFT_eSprite *sprite, int x, int y, float voltage)
 	(*sprite).drawRect(x, y, 30, 10, color2);
 }
 
-void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort, const char *ssid)
+void drawUpdSendingActivity(TFT_eSprite *sprite)
 {
-		TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
+	(*sprite).fillRect(0, 238, 135, 2, TFT_RED);
+}
+
+void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort, const char *ssid, bool is_upd_sending)
+{
+	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
 
 	drawing_sprite.setColorDepth(8);
 	drawing_sprite.createSprite(tft.width(), tft.height());
@@ -99,9 +104,9 @@ void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort
 	// %s\n\nIp : %s\n\nUdp port : %d\n\n", ssid,WiFi.localIP().toString().c_str(), localUdpPort);
 
 	drawing_sprite.setTextColor(TFT_RED);
-	drawing_sprite.printf("Up time : ");
+	drawing_sprite.printf("Tripode Id : ");
 	drawing_sprite.setTextColor(TFT_WHITE);
-	drawing_sprite.printf("%llds\n", esp_timer_get_time() / 1000000);
+	drawing_sprite.printf("%s\n", TRIPODE_ID);
 	drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
 
 	//uint32_t color1 = TFT_BLUE;
@@ -130,11 +135,15 @@ void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort
 	{
 		drawing_sprite.fillCircle(108, 190, pwmValues[2] / 11, TFT_BLUE);
 	}
+	if (is_upd_sending)
+	{
+		drawUpdSendingActivity(&drawing_sprite);
+	}
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
 }
 
-void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress)
+void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool is_upd_sending)
 {
 	static bool isCalibrated = false;
 	static int calMinX = 0;
@@ -208,8 +217,8 @@ void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress)
 
 	compassArraw(tft, &drawing_sprite, 45, 175, (-(int)(heading * 180 / PI)));
 
-	drawing_sprite.setCursor(2, 15);
-	drawing_sprite.printf("osc addr : /%d", oscAddress);
+	// drawing_sprite.setCursor(2, 15);
+	// drawing_sprite.printf("osc addr : /%d", oscAddress);
 
 
 	drawing_sprite.setCursor(7, 30);
@@ -264,13 +273,13 @@ void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress)
 	
 	drawing_sprite.setCursor(5, 170);
 	drawing_sprite.printf("Accel");
-	drawing_sprite.fillRect(10, 240 - acceleration, 20, acceleration, TFT_RED);
-	drawing_sprite.drawRect(10, 190, 20, 50, TFT_WHITE);
+	drawing_sprite.fillRect(10, 235 - acceleration, 20, acceleration, TFT_RED);
+	drawing_sprite.drawRect(10, 185, 20, 50, TFT_WHITE);
 	
 	drawing_sprite.setCursor(108, 170);
 	drawing_sprite.printf("Gyro");
-	drawing_sprite.fillRect(110, 240 - gyroscope, 20, gyroscope, TFT_RED);
-	drawing_sprite.drawRect(110, 190, 20, 50, TFT_WHITE);
+	drawing_sprite.fillRect(110, 235 - gyroscope, 20, gyroscope, TFT_RED);
+	drawing_sprite.drawRect(110, 185, 20, 50, TFT_WHITE);
 
 	
 	Serial.print("G ");
@@ -280,6 +289,11 @@ void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress)
 	Serial.print((int) sensors.gyro.y);
 	Serial.print(" Z: ");
 	Serial.println((int) sensors.gyro.z);
+
+	if (is_upd_sending)
+	{
+		drawUpdSendingActivity(&drawing_sprite);
+	}
 
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
@@ -460,7 +474,7 @@ void printSign(TFT_eSprite *drawing_sprite, float alpha)
 }
 
 
-void drawAlpha(TFT_eSPI tft, float alpha)
+void drawAlpha(TFT_eSPI tft, float alpha, bool is_upd_sending)
 {
 	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
 	drawing_sprite.setColorDepth(8);
@@ -472,6 +486,17 @@ void drawAlpha(TFT_eSPI tft, float alpha)
 	drawing_sprite.setTextColor(TFT_WHITE);
 	drawing_sprite.setTextDatum(MC_DATUM);
 	drawing_sprite.setCursor(0, 0);
+	uint16_t v = analogRead(ADC_PIN);
+	float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (VREF / 1000.0);
+	drawing_sprite.setTextColor(TFT_RED);
+	drawing_sprite.printf("Voltage : ");
+	drawing_sprite.setTextColor(TFT_WHITE);
+	drawing_sprite.printf("%.2fv\n\n", battery_voltage);
+	drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
+	drawing_sprite.setTextColor(TFT_WHITE);
+	drawing_sprite.setCursor(0, 0);
+
+
 
 	printSign(&drawing_sprite, alpha);
 
@@ -522,7 +547,10 @@ void drawAlpha(TFT_eSPI tft, float alpha)
 	{
 		Serial.printf("complex\n");
 	}
-
+	if (is_upd_sending)
+	{
+		drawUpdSendingActivity(&drawing_sprite);
+	}
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
 
