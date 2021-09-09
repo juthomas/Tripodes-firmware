@@ -1,0 +1,8 @@
+orca_ip,0.0.0.0
+orca_port,0000
+usine_ip,0.0.0.0
+usine_port,0000
+sta_ssid,tripodesAP
+sta_password,44448888
+ap_ssid,tripodesAP
+ap_password,44448888

@@ -79,14 +79,13 @@ const uint16_t updMessageRate = 60; // 1/Rate => 20 = 1bang/2secs
 const uint16_t updDrawRate = 300; // 1/Rate => 20 = 1bang/2secs
 
 // const IPAddress KooOutIp(10,0,1,14);
-const IPAddress KooOutIp(10,0,1,14);
-const unsigned int KooOutPort = 2002;          // remote port to receive OSC
+
 //1  2  3  4
 //6, 7, 5, 12
-const IPAddress Rasp1OutIp(10,87,210,255);   // Raspi4 local addr
 // const IPAddress Rasp1OutIp(10,87,210,255);   // Raspi4 local addr
-// const IPAddress Rasp1OutIp(10,87,208,68);   // Raspi4 local addr
-const unsigned int Rasp1OutPort = 49160;       // Orca input port
+// // const IPAddress Rasp1OutIp(10,87,210,255);   // Raspi4 local addr
+// // const IPAddress Rasp1OutIp(10,87,208,68);   // Raspi4 local addr
+// const unsigned int Rasp1OutPort = 49160;       // Orca input port
 
 float	dfa(float *x, size_t size_x, float min_scale, float max_scale, float scale_dens);
 
@@ -124,5 +123,10 @@ void drawAlpha(TFT_eSPI tft, float alpha, bool is_upd_sending);
 
 //dfa.cpp
 float mean(float *tab, size_t tab_size);
+
+
+void	web();
+
+
 
 #endif
