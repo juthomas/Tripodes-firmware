@@ -89,6 +89,12 @@ const uint16_t updDrawRate = 300; // 1/Rate => 20 = 1bang/2secs
 
 float	dfa(float *x, size_t size_x, float min_scale, float max_scale, float scale_dens);
 
+typedef struct	s_sta_list
+{
+	String		ip_adress;
+	bool		has_website;
+}				t_sta_list;
+
 typedef struct	s_float3
 {
 	float		x;

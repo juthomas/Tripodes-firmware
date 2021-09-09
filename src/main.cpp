@@ -2,6 +2,7 @@
 #include "ESPAsyncWebServer.h"
 #include "tripodes.h"
 #include <string>
+#include <HTTPClient.h>
 
 // #include <ESP32Ping.h>
 
@@ -292,49 +293,39 @@ void showVoltage()
 	}
 }
 
-void sta_setup()
+
+// Need transform to not trigger the watchdog
+String get_sta_list()
 {
-	// Set your Static IP address
-	// Set your Gateway IP address
-	IPAddress gateway(10, 0, 1, 1);
+	wifi_sta_list_t wifi_sta_list;
+	tcpip_adapter_sta_list_t adapter_sta_list;
 
-	IPAddress subnet(255, 255, 0, 0);
+	memset(&wifi_sta_list, 0, sizeof(wifi_sta_list));
+	memset(&adapter_sta_list, 0, sizeof(adapter_sta_list));
 
-	WiFi.mode(WIFI_STA);
+	esp_wifi_ap_get_sta_list(&wifi_sta_list);
+	tcpip_adapter_get_sta_list(&wifi_sta_list, &adapter_sta_list);
 
-	//Static ip attributon
-	// WiFi.config(local_IP, gateway, subnet);
-
-	WiFi.begin(ssid, password);
-	tft.drawString("Connecting", tft.width() / 2, tft.height() / 2);
-	uint64_t timeStamp = millis();
-
-	ledcSetup(motorChannel1, motorFreq, motorResolution);
-	ledcSetup(motorChannel2, motorFreq, motorResolution);
-	ledcSetup(motorChannel3, motorFreq, motorResolution);
-	ledcAttachPin(MOTOR_1, motorChannel1);
-	ledcAttachPin(MOTOR_2, motorChannel2);
-	ledcAttachPin(MOTOR_3, motorChannel3);
-
-	Serial.println("Connecting");
-	while (WiFi.status() != WL_CONNECTED)
+	// <ul>
+	//	<li>Ip1</li>
+	//	<li>Ip2</li>
+	//	....
+	// </ul>
+	String html_code = "<ul>\n";
+	for (int i = 0; i < adapter_sta_list.num; i++)
 	{
-		if (millis() - timeStamp > 60000)
-		{
-			ESP.restart();
-			tft.fillScreen(TFT_BLACK);
-			tft.drawString("Restarting", tft.width() / 2, tft.height() / 2);
-		}
-		delay(500);
-		Serial.println(wl_status_to_string(WiFi.status()));
-		tft.fillScreen(TFT_BLACK);
+		tcpip_adapter_sta_info_t station = adapter_sta_list.sta[i];
+		char *ip_char = ip4addr_ntoa(&(station.ip));
+		// HTTPClient http_request;
+		// http_request.begin("http://" + String(ip_char) );
 
-		tft.drawString(wl_status_to_string(WiFi.status()), tft.width() / 2, tft.height() / 2);
+		// String httpcode =  String(http_request.GET());
+		String httpcode = "0";
+		html_code += "	<li><a href=\"http://" + String(ip_char) + "\">" + String(ip_char) + "</a>code:" + httpcode +"</li>\n";
+		// http_request.end();
 	}
-	Serial.print("Connected, IP address: ");
-	Serial.println(WiFi.localIP());
-	Udp.begin(localUdpPort);
-	Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
+	html_code += "<ul>";
+	return (html_code);
 }
 
 String processor(const String &var)
@@ -386,6 +377,10 @@ String processor(const String &var)
 	{
 		String string_password = String(APpassword);
 		return (string_password);
+	}
+	else if (var == "STALIST")
+	{
+		return (get_sta_list());
 	}
 	return String();
 }
@@ -598,7 +593,7 @@ char *get_data_from_csv(char *key)
 
 //create function to store value from key here
 
-void setup_server()
+void setup_server_for_ap()
 {
 
 	server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -723,6 +718,120 @@ void setup_server()
 	server.begin();
 }
 
+
+void setup_server_for_sta()
+{
+
+	server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+			  {
+				  if (request->hasParam("orca_ip"))
+				  {
+
+					  // AsyncWebParameter* p = request->getParam("orca_ip");
+					  //   Serial.print("Orca ip :");
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("orca_ip")->value().toCharArray((char *)buff, 50);
+					  //   Serial.println(request->getParam("orca_ip")->value().toCharArray());
+					  orca_ip = IPAddress(get_octet((char *)buff, 1), get_octet((char *)buff, 2), get_octet((char *)buff, 3), get_octet((char *)buff, 4));
+
+					  Serial.println(orca_ip.toString());
+
+					  set_data_to_csv("orca_ip", (char*)buff);
+					  free(buff);
+				  }
+				  if (request->hasParam("orca_port"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("orca_port")->value().toCharArray((char *)buff, 50);
+					  orca_port = atoi((char*)buff);
+					  set_data_to_csv("orca_port", (char*)buff);
+					  free(buff);
+				  }
+				  if (request->hasParam("usine_ip"))
+				  {
+					  uint8_t *buff;
+					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("usine_ip")->value().toCharArray((char *)buff, 50);
+					  //   Serial.println(request->getParam("orca_ip")->value().toCharArray());
+					  usine_ip = IPAddress(get_octet((char *)buff, 1), get_octet((char *)buff, 2), get_octet((char *)buff, 3), get_octet((char *)buff, 4));
+
+					  Serial.println(usine_ip.toString());
+
+					  set_data_to_csv("usine_ip", (char*)buff);
+					  free(buff);
+				  }
+				  if (request->hasParam("usine_port"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("usine_port")->value().toCharArray((char *)buff, 50);
+					  usine_port = atoi((char*)buff);
+					  set_data_to_csv("usine_port", (char*)buff);
+					  free(buff);
+				  }
+				  if (request->hasParam("sta_ssid"))
+				  {
+					uint8_t *buff;
+					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("sta_ssid")->value().toCharArray((char *)buff, 50);
+					  if (ssid)
+					  {
+						  free(ssid);
+					  }
+					  ssid = strdup((char*)buff);
+					  set_data_to_csv("sta_ssid", (char*)buff);
+					free(buff);
+				  }
+				  if (request->hasParam("sta_password"))
+				  {
+					uint8_t *buff;
+					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("sta_password")->value().toCharArray((char *)buff, 50);
+					  if (password)
+					  {
+						  free(password);
+					  }
+					  password = strdup((char*)buff);
+					  set_data_to_csv("sta_password", (char*)buff);
+					free(buff);
+				  }
+				  if (request->hasParam("ap_ssid"))
+				  {
+					uint8_t *buff;
+					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("ap_ssid")->value().toCharArray((char *)buff, 50);
+					  if (APssid)
+					  {
+						  free(APssid);
+					  }
+					  APssid = strdup((char*)buff);
+					  set_data_to_csv("ap_ssid", (char*)buff);
+					free(buff);
+				  }
+				  if (request->hasParam("ap_password"))
+				  {
+					uint8_t *buff;
+					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("ap_password")->value().toCharArray((char *)buff, 50);
+					  if (APpassword)
+					  {
+						  free(APpassword);
+					  }
+					  APpassword = strdup((char*)buff);
+					  set_data_to_csv("ap_password", (char*)buff);
+					free(buff);
+				  }
+
+
+				  request->send(SPIFFS, "/StaIndex.html", String(), false, processor);
+				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
+				  Serial.println("Client Here !");
+			  });
+	server.begin();
+}
+
 void setup_credentials()
 {
 	char *tmp = 0;
@@ -803,7 +912,53 @@ void ap_setup()
 	Serial.print("AP IP address: ");
 	Serial.println(myIP);
 	tft.printf("AP addr: %s\n", myIP.toString().c_str());
-	setup_server();
+	setup_server_for_ap();
+}
+
+void sta_setup()
+{
+	// Set your Static IP address
+	// Set your Gateway IP address
+	// IPAddress gateway(10, 0, 1, 1);
+
+	// IPAddress subnet(255, 255, 0, 0);
+
+	WiFi.mode(WIFI_STA);
+
+	//Static ip attributon
+	// WiFi.config(local_IP, gateway, subnet);
+
+	WiFi.begin(ssid, password);
+	tft.drawString("Connecting", tft.width() / 2, tft.height() / 2);
+	uint64_t timeStamp = millis();
+
+	ledcSetup(motorChannel1, motorFreq, motorResolution);
+	ledcSetup(motorChannel2, motorFreq, motorResolution);
+	ledcSetup(motorChannel3, motorFreq, motorResolution);
+	ledcAttachPin(MOTOR_1, motorChannel1);
+	ledcAttachPin(MOTOR_2, motorChannel2);
+	ledcAttachPin(MOTOR_3, motorChannel3);
+
+	Serial.println("Connecting");
+	while (WiFi.status() != WL_CONNECTED)
+	{
+		if (millis() - timeStamp > 60000)
+		{
+			ESP.restart();
+			tft.fillScreen(TFT_BLACK);
+			tft.drawString("Restarting", tft.width() / 2, tft.height() / 2);
+		}
+		delay(500);
+		Serial.println(wl_status_to_string(WiFi.status()));
+		tft.fillScreen(TFT_BLACK);
+
+		tft.drawString(wl_status_to_string(WiFi.status()), tft.width() / 2, tft.height() / 2);
+	}
+	Serial.print("Connected, IP address: ");
+	Serial.println(WiFi.localIP());
+	setup_server_for_sta();
+	Udp.begin(localUdpPort);
+	Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
 }
 
 void setup()
@@ -1064,7 +1219,7 @@ void drawNetworkActivity()
 		drawing_sprite.print("\nIP:  ");
 		drawing_sprite.setTextColor(TFT_WHITE);
 
-		drawing_sprite.println(ip4addr_ntoa(&(station.ip)));
+		drawing_sprite.println(ip4addr_ntoa(&(station.ip)));//leak?
 	}
 
 	drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
