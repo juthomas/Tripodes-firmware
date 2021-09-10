@@ -4,7 +4,7 @@
 #include <string>
 #include <HTTPClient.h>
 #include <list>
-
+#include <mutex>
 // #include <ESP32Ping.h>
 
 // #include <Adafruit_L3GD20_U.h>
@@ -19,6 +19,12 @@
 
 // const char *ssid = "Dourr";
 // const char *password = "Akiraestlepluscooldeschien28os";
+
+TaskHandle_t Task1;
+
+std::mutex sta_list_mutex;
+
+
 
 char *ssid;
 char *password;
@@ -129,7 +135,6 @@ int timerPansements[3];
 hw_timer_t *timers[4] = {NULL, NULL, NULL, NULL};
 
 std::list<s_sta_list> sta_list;
-
 
 const char *wl_status_to_string(int ah)
 {
@@ -297,7 +302,6 @@ void showVoltage()
 	}
 }
 
-
 // Need transform to not trigger the watchdog
 String get_sta_list()
 {
@@ -306,25 +310,32 @@ String get_sta_list()
 	//	<li>Ip2</li>
 	//	....
 	// </ul>
+	sta_list_mutex.lock();
 	String html_code = "<ul>\n";
-	for(const auto& elem : sta_list)
+	for (const t_sta_list &elem : sta_list)
 	{
 		Serial.print("Ip : ");
 		Serial.print(elem.ip_adress);
 		Serial.print(" has website : ");
 		Serial.println(elem.has_website);
-		html_code += "	<li><a href=\"http://" + elem.ip_adress + "\">" + elem.ip_adress + "</a>code:" + elem.has_website +"</li>\n";
-
+		if (elem.has_website)
+		{
+			html_code += "	<li><a href=\"http://" + elem.ip_adress + "\">" + elem.ip_adress + "</a> (Tripode) </li>\n";
+		}
+		else
+		{
+			html_code += "	<li>" + elem.ip_adress + "</li>\n";
+		}
 	}
 
+	// HTTPClient http_request;
+	// http_request.begin("http://" + String(ip_char) );
 
-		// HTTPClient http_request;
-		// http_request.begin("http://" + String(ip_char) );
+	// String httpcode =  String(http_request.GET());
+	// http_request.end();
 
-		// String httpcode =  String(http_request.GET());
-		// http_request.end();
-	
 	html_code += "<ul>";
+	sta_list_mutex.unlock();
 	return (html_code);
 }
 
@@ -422,6 +433,52 @@ bool is_key_matching(char *key, char *file, size_t index)
 		return (true);
 	}
 	return (false);
+}
+
+void update_sta_list(void *params)
+{
+	wifi_sta_list_t wifi_sta_list;
+	tcpip_adapter_sta_list_t adapter_sta_list;
+
+	for (;;)
+	{
+
+		memset(&wifi_sta_list, 0, sizeof(wifi_sta_list));
+		memset(&adapter_sta_list, 0, sizeof(adapter_sta_list));
+
+		esp_wifi_ap_get_sta_list(&wifi_sta_list);
+		tcpip_adapter_get_sta_list(&wifi_sta_list, &adapter_sta_list);
+
+		// sta_list.clear();
+		std::list<t_sta_list> tmp_list;
+
+		for (int i = 0; i < adapter_sta_list.num; i++)
+		{
+			tcpip_adapter_sta_info_t station = adapter_sta_list.sta[i];
+			char *ip_char = ip4addr_ntoa(&(station.ip)); //leak?
+
+			HTTPClient http_request;
+			http_request.setConnectTimeout(5000);
+			http_request.setTimeout(5000);
+			String ip_str = String(ip_char);
+			http_request.begin(("http://" + ip_str + "/?test=42").c_str());
+			int http_code = http_request.GET();
+			// Serial.printf("Req code : %d\n", http_code);
+			// String httpcode =  String(http_request.GET());
+			bool has_website = http_code == 200 ? true : false;
+			// Serial.print("Ip sta :");
+			// Serial.println(ip_str);
+			tmp_list.push_front((t_sta_list){.ip_adress = ip_str, .has_website = has_website});
+			http_request.end();
+		}
+		sta_list_mutex.lock();
+		sta_list = tmp_list;
+		sta_list_mutex.unlock();
+		// Serial.println("Before");
+		delay(1000);
+		// Serial.println("After");
+
+	}
 }
 
 char *get_value_from_csv(char *file, size_t index)
@@ -611,7 +668,7 @@ void setup_server_for_ap()
 
 					  Serial.println(orca_ip.toString());
 
-					  set_data_to_csv("orca_ip", (char*)buff);
+					  set_data_to_csv("orca_ip", (char *)buff);
 					  free(buff);
 				  }
 				  if (request->hasParam("orca_port"))
@@ -619,21 +676,21 @@ void setup_server_for_ap()
 					  uint8_t *buff;
 					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("orca_port")->value().toCharArray((char *)buff, 50);
-					  orca_port = atoi((char*)buff);
-					  set_data_to_csv("orca_port", (char*)buff);
+					  orca_port = atoi((char *)buff);
+					  set_data_to_csv("orca_port", (char *)buff);
 					  free(buff);
 				  }
 				  if (request->hasParam("usine_ip"))
 				  {
 					  uint8_t *buff;
-					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("usine_ip")->value().toCharArray((char *)buff, 50);
 					  //   Serial.println(request->getParam("orca_ip")->value().toCharArray());
 					  usine_ip = IPAddress(get_octet((char *)buff, 1), get_octet((char *)buff, 2), get_octet((char *)buff, 3), get_octet((char *)buff, 4));
 
 					  Serial.println(usine_ip.toString());
 
-					  set_data_to_csv("usine_ip", (char*)buff);
+					  set_data_to_csv("usine_ip", (char *)buff);
 					  free(buff);
 				  }
 				  if (request->hasParam("usine_port"))
@@ -641,63 +698,62 @@ void setup_server_for_ap()
 					  uint8_t *buff;
 					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("usine_port")->value().toCharArray((char *)buff, 50);
-					  usine_port = atoi((char*)buff);
-					  set_data_to_csv("usine_port", (char*)buff);
+					  usine_port = atoi((char *)buff);
+					  set_data_to_csv("usine_port", (char *)buff);
 					  free(buff);
 				  }
 				  if (request->hasParam("sta_ssid"))
 				  {
-					uint8_t *buff;
-					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("sta_ssid")->value().toCharArray((char *)buff, 50);
 					  if (ssid)
 					  {
 						  free(ssid);
 					  }
-					  ssid = strdup((char*)buff);
-					  set_data_to_csv("sta_ssid", (char*)buff);
-					free(buff);
+					  ssid = strdup((char *)buff);
+					  set_data_to_csv("sta_ssid", (char *)buff);
+					  free(buff);
 				  }
 				  if (request->hasParam("sta_password"))
 				  {
-					uint8_t *buff;
-					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("sta_password")->value().toCharArray((char *)buff, 50);
 					  if (password)
 					  {
 						  free(password);
 					  }
-					  password = strdup((char*)buff);
-					  set_data_to_csv("sta_password", (char*)buff);
-					free(buff);
+					  password = strdup((char *)buff);
+					  set_data_to_csv("sta_password", (char *)buff);
+					  free(buff);
 				  }
 				  if (request->hasParam("ap_ssid"))
 				  {
-					uint8_t *buff;
-					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("ap_ssid")->value().toCharArray((char *)buff, 50);
 					  if (APssid)
 					  {
 						  free(APssid);
 					  }
-					  APssid = strdup((char*)buff);
-					  set_data_to_csv("ap_ssid", (char*)buff);
-					free(buff);
+					  APssid = strdup((char *)buff);
+					  set_data_to_csv("ap_ssid", (char *)buff);
+					  free(buff);
 				  }
 				  if (request->hasParam("ap_password"))
 				  {
-					uint8_t *buff;
-					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("ap_password")->value().toCharArray((char *)buff, 50);
 					  if (APpassword)
 					  {
 						  free(APpassword);
 					  }
-					  APpassword = strdup((char*)buff);
-					  set_data_to_csv("ap_password", (char*)buff);
-					free(buff);
+					  APpassword = strdup((char *)buff);
+					  set_data_to_csv("ap_password", (char *)buff);
+					  free(buff);
 				  }
-
 
 				  request->send(SPIFFS, "/ApIndex.html", String(), false, processor);
 				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
@@ -718,7 +774,6 @@ void setup_server_for_ap()
 	server.begin();
 }
 
-
 void setup_server_for_sta()
 {
 
@@ -737,7 +792,7 @@ void setup_server_for_sta()
 
 					  Serial.println(orca_ip.toString());
 
-					  set_data_to_csv("orca_ip", (char*)buff);
+					  set_data_to_csv("orca_ip", (char *)buff);
 					  free(buff);
 				  }
 				  if (request->hasParam("orca_port"))
@@ -745,21 +800,21 @@ void setup_server_for_sta()
 					  uint8_t *buff;
 					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("orca_port")->value().toCharArray((char *)buff, 50);
-					  orca_port = atoi((char*)buff);
-					  set_data_to_csv("orca_port", (char*)buff);
+					  orca_port = atoi((char *)buff);
+					  set_data_to_csv("orca_port", (char *)buff);
 					  free(buff);
 				  }
 				  if (request->hasParam("usine_ip"))
 				  {
 					  uint8_t *buff;
-					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("usine_ip")->value().toCharArray((char *)buff, 50);
 					  //   Serial.println(request->getParam("orca_ip")->value().toCharArray());
 					  usine_ip = IPAddress(get_octet((char *)buff, 1), get_octet((char *)buff, 2), get_octet((char *)buff, 3), get_octet((char *)buff, 4));
 
 					  Serial.println(usine_ip.toString());
 
-					  set_data_to_csv("usine_ip", (char*)buff);
+					  set_data_to_csv("usine_ip", (char *)buff);
 					  free(buff);
 				  }
 				  if (request->hasParam("usine_port"))
@@ -767,63 +822,62 @@ void setup_server_for_sta()
 					  uint8_t *buff;
 					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("usine_port")->value().toCharArray((char *)buff, 50);
-					  usine_port = atoi((char*)buff);
-					  set_data_to_csv("usine_port", (char*)buff);
+					  usine_port = atoi((char *)buff);
+					  set_data_to_csv("usine_port", (char *)buff);
 					  free(buff);
 				  }
 				  if (request->hasParam("sta_ssid"))
 				  {
-					uint8_t *buff;
-					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("sta_ssid")->value().toCharArray((char *)buff, 50);
 					  if (ssid)
 					  {
 						  free(ssid);
 					  }
-					  ssid = strdup((char*)buff);
-					  set_data_to_csv("sta_ssid", (char*)buff);
-					free(buff);
+					  ssid = strdup((char *)buff);
+					  set_data_to_csv("sta_ssid", (char *)buff);
+					  free(buff);
 				  }
 				  if (request->hasParam("sta_password"))
 				  {
-					uint8_t *buff;
-					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("sta_password")->value().toCharArray((char *)buff, 50);
 					  if (password)
 					  {
 						  free(password);
 					  }
-					  password = strdup((char*)buff);
-					  set_data_to_csv("sta_password", (char*)buff);
-					free(buff);
+					  password = strdup((char *)buff);
+					  set_data_to_csv("sta_password", (char *)buff);
+					  free(buff);
 				  }
 				  if (request->hasParam("ap_ssid"))
 				  {
-					uint8_t *buff;
-					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("ap_ssid")->value().toCharArray((char *)buff, 50);
 					  if (APssid)
 					  {
 						  free(APssid);
 					  }
-					  APssid = strdup((char*)buff);
-					  set_data_to_csv("ap_ssid", (char*)buff);
-					free(buff);
+					  APssid = strdup((char *)buff);
+					  set_data_to_csv("ap_ssid", (char *)buff);
+					  free(buff);
 				  }
 				  if (request->hasParam("ap_password"))
 				  {
-					uint8_t *buff;
-					buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("ap_password")->value().toCharArray((char *)buff, 50);
 					  if (APpassword)
 					  {
 						  free(APpassword);
 					  }
-					  APpassword = strdup((char*)buff);
-					  set_data_to_csv("ap_password", (char*)buff);
-					free(buff);
+					  APpassword = strdup((char *)buff);
+					  set_data_to_csv("ap_password", (char *)buff);
+					  free(buff);
 				  }
-
 
 				  request->send(SPIFFS, "/StaIndex.html", String(), false, processor);
 				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
@@ -907,12 +961,14 @@ void ap_setup()
 {
 	WiFi.mode(WIFI_AP);
 	WiFi.softAP(APssid, APpassword, 1, 0, 10);
-
 	IPAddress myIP = WiFi.softAPIP();
 	Serial.print("AP IP address: ");
 	Serial.println(myIP);
 	tft.printf("AP addr: %s\n", myIP.toString().c_str());
 	setup_server_for_ap();
+
+	xTaskCreatePinnedToCore(update_sta_list, "update_sta_list", 10000, NULL, 1, &Task1, 1); 
+	
 }
 
 void sta_setup()
@@ -1150,39 +1206,6 @@ void drawMotorsActivity2()
 }
 
 //create sta list instant
-void update_sta_list()
-{
-	wifi_sta_list_t wifi_sta_list;
-	tcpip_adapter_sta_list_t adapter_sta_list;
-	
-	memset(&wifi_sta_list, 0, sizeof(wifi_sta_list));
-	memset(&adapter_sta_list, 0, sizeof(adapter_sta_list));
-
-	esp_wifi_ap_get_sta_list(&wifi_sta_list);
-	tcpip_adapter_get_sta_list(&wifi_sta_list, &adapter_sta_list);
-
-	// sta_list.clear();
-	std::list<t_sta_list> tmp_list;
-
-	for (int i = 0; i < adapter_sta_list.num; i++)
-	{
-		tcpip_adapter_sta_info_t station = adapter_sta_list.sta[i];
-		char *ip_char = ip4addr_ntoa(&(station.ip));//leak?
-
-		HTTPClient http_request;
-		http_request.setConnectTimeout(300);
-		http_request.setTimeout(300);
-		http_request.begin( ("http://" + String(ip_char) + "/?test=42").c_str() );
-		int http_code = http_request.GET();
-		// Serial.printf("Req code : %d\n", http_code);
-		// String httpcode =  String(http_request.GET());
-		bool has_website = http_code == 200 ? true : false;
-
-		tmp_list.push_front((t_sta_list){.ip_adress = String(ip_char), .has_website = has_website});
-		http_request.end();
-	}
-	sta_list = tmp_list;
-}
 
 void drawNetworkActivity()
 {
@@ -1218,58 +1241,77 @@ void drawNetworkActivity()
 	drawing_sprite.setTextColor(TFT_WHITE);
 	drawing_sprite.printf("%d\n", WiFi.softAPgetStationNum());
 
-	wifi_sta_list_t wifi_sta_list;
-	tcpip_adapter_sta_list_t adapter_sta_list;
+	// wifi_sta_list_t wifi_sta_list;
+	// tcpip_adapter_sta_list_t adapter_sta_list;
 
-	memset(&wifi_sta_list, 0, sizeof(wifi_sta_list));
-	memset(&adapter_sta_list, 0, sizeof(adapter_sta_list));
+	// memset(&wifi_sta_list, 0, sizeof(wifi_sta_list));
+	// memset(&adapter_sta_list, 0, sizeof(adapter_sta_list));
 
-	esp_wifi_ap_get_sta_list(&wifi_sta_list);
-	tcpip_adapter_get_sta_list(&wifi_sta_list, &adapter_sta_list);
+	// esp_wifi_ap_get_sta_list(&wifi_sta_list);
+	// tcpip_adapter_get_sta_list(&wifi_sta_list, &adapter_sta_list);
 
-	for (int i = 0; i < adapter_sta_list.num; i++)
+	// for (int i = 0; i < adapter_sta_list.num; i++)
+	// {
+
+	// 	drawing_sprite.setTextColor(TFT_YELLOW);
+
+	// 	drawing_sprite.setCursor(0, 50 + (i * 14));
+
+	// 	// drawing_sprite.println("");
+
+	// 	tcpip_adapter_sta_info_t station = adapter_sta_list.sta[i];
+
+	// 	//drawing_sprite.setTextColor(TFT_BLUE);
+
+	// 	// drawing_sprite.print("MAC: ");
+	// 	// drawing_sprite.setTextColor(TFT_WHITE);
+
+	// 	// for(int i = 0; i< 6; i++){
+
+	// 	// 	drawing_sprite.printf("%02X", station.mac[i]);
+	// 	// 	if(i<5)drawing_sprite.print(":");
+	// 	// }
+
+	// 	drawing_sprite.setTextColor(TFT_BLUE);
+
+	// 	drawing_sprite.print("\nIP:  ");
+	// 	drawing_sprite.setTextColor(TFT_WHITE);
+
+	// 	drawing_sprite.println(ip4addr_ntoa(&(station.ip))); //leak?
+	// }
 	{
+		int i = 0;
+		sta_list_mutex.lock();
+		for (const t_sta_list &elem : sta_list)
+		{
+			drawing_sprite.setTextColor(TFT_YELLOW);
 
-		drawing_sprite.setTextColor(TFT_YELLOW);
+			drawing_sprite.setCursor(0, 50 + (i * 14));
+			drawing_sprite.setTextColor(TFT_BLUE);
 
-		drawing_sprite.setCursor(0, 50 + (i * 14));
+			drawing_sprite.print("\nIP:  ");
+			drawing_sprite.setTextColor(TFT_WHITE);
+			drawing_sprite.println(elem.ip_adress);
 
-		// drawing_sprite.println("");
-
-		tcpip_adapter_sta_info_t station = adapter_sta_list.sta[i];
-
-		//drawing_sprite.setTextColor(TFT_BLUE);
-
-		// drawing_sprite.print("MAC: ");
-		// drawing_sprite.setTextColor(TFT_WHITE);
-
-		// for(int i = 0; i< 6; i++){
-
-		// 	drawing_sprite.printf("%02X", station.mac[i]);
-		// 	if(i<5)drawing_sprite.print(":");
-		// }
-
-		drawing_sprite.setTextColor(TFT_BLUE);
-
-		drawing_sprite.print("\nIP:  ");
-		drawing_sprite.setTextColor(TFT_WHITE);
-
-		drawing_sprite.println(ip4addr_ntoa(&(station.ip)));//leak?
+			i++;
+		}
+		sta_list_mutex.unlock();
 	}
+
 
 	drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
 
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
-	update_sta_list();
-	for(const auto& elem : sta_list)
-	{
-		Serial.print("Ip : ");
-		Serial.print(elem.ip_adress);
-		Serial.print(" has website : ");
-		Serial.println(elem.has_website);
-
-	}
+	// sta_list_mutex.lock();
+	// // for (const auto &elem : sta_list)
+	// // {
+	// // 	Serial.print("Ip : ");
+	// // 	Serial.print(elem.ip_adress);
+	// // 	Serial.print(" has website : ");
+	// // 	Serial.println(elem.has_website);
+	// // }
+	// sta_list_mutex.unlock();
 }
 
 void set_pwm0(int pwm)
