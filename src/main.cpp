@@ -3,6 +3,7 @@
 #include "tripodes.h"
 #include <string>
 #include <HTTPClient.h>
+#include <list>
 
 // #include <ESP32Ping.h>
 
@@ -126,6 +127,9 @@ bool timersActives[3];
 int pwmValues[3];
 int timerPansements[3];
 hw_timer_t *timers[4] = {NULL, NULL, NULL, NULL};
+
+std::list<s_sta_list> sta_list;
+
 
 const char *wl_status_to_string(int ah)
 {
@@ -297,33 +301,29 @@ void showVoltage()
 // Need transform to not trigger the watchdog
 String get_sta_list()
 {
-	wifi_sta_list_t wifi_sta_list;
-	tcpip_adapter_sta_list_t adapter_sta_list;
-
-	memset(&wifi_sta_list, 0, sizeof(wifi_sta_list));
-	memset(&adapter_sta_list, 0, sizeof(adapter_sta_list));
-
-	esp_wifi_ap_get_sta_list(&wifi_sta_list);
-	tcpip_adapter_get_sta_list(&wifi_sta_list, &adapter_sta_list);
-
 	// <ul>
 	//	<li>Ip1</li>
 	//	<li>Ip2</li>
 	//	....
 	// </ul>
 	String html_code = "<ul>\n";
-	for (int i = 0; i < adapter_sta_list.num; i++)
+	for(const auto& elem : sta_list)
 	{
-		tcpip_adapter_sta_info_t station = adapter_sta_list.sta[i];
-		char *ip_char = ip4addr_ntoa(&(station.ip));
+		Serial.print("Ip : ");
+		Serial.print(elem.ip_adress);
+		Serial.print(" has website : ");
+		Serial.println(elem.has_website);
+		html_code += "	<li><a href=\"http://" + elem.ip_adress + "\">" + elem.ip_adress + "</a>code:" + elem.has_website +"</li>\n";
+
+	}
+
+
 		// HTTPClient http_request;
 		// http_request.begin("http://" + String(ip_char) );
 
 		// String httpcode =  String(http_request.GET());
-		String httpcode = "0";
-		html_code += "	<li><a href=\"http://" + String(ip_char) + "\">" + String(ip_char) + "</a>code:" + httpcode +"</li>\n";
 		// http_request.end();
-	}
+	
 	html_code += "<ul>";
 	return (html_code);
 }
@@ -1149,6 +1149,41 @@ void drawMotorsActivity2()
 	drawing_sprite.deleteSprite();
 }
 
+//create sta list instant
+void update_sta_list()
+{
+	wifi_sta_list_t wifi_sta_list;
+	tcpip_adapter_sta_list_t adapter_sta_list;
+	
+	memset(&wifi_sta_list, 0, sizeof(wifi_sta_list));
+	memset(&adapter_sta_list, 0, sizeof(adapter_sta_list));
+
+	esp_wifi_ap_get_sta_list(&wifi_sta_list);
+	tcpip_adapter_get_sta_list(&wifi_sta_list, &adapter_sta_list);
+
+	// sta_list.clear();
+	std::list<t_sta_list> tmp_list;
+
+	for (int i = 0; i < adapter_sta_list.num; i++)
+	{
+		tcpip_adapter_sta_info_t station = adapter_sta_list.sta[i];
+		char *ip_char = ip4addr_ntoa(&(station.ip));//leak?
+
+		HTTPClient http_request;
+		http_request.setConnectTimeout(300);
+		http_request.setTimeout(300);
+		http_request.begin( ("http://" + String(ip_char) + "/?test=42").c_str() );
+		int http_code = http_request.GET();
+		// Serial.printf("Req code : %d\n", http_code);
+		// String httpcode =  String(http_request.GET());
+		bool has_website = http_code == 200 ? true : false;
+
+		tmp_list.push_front((t_sta_list){.ip_adress = String(ip_char), .has_website = has_website});
+		http_request.end();
+	}
+	sta_list = tmp_list;
+}
+
 void drawNetworkActivity()
 {
 	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
@@ -1226,6 +1261,15 @@ void drawNetworkActivity()
 
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
+	update_sta_list();
+	for(const auto& elem : sta_list)
+	{
+		Serial.print("Ip : ");
+		Serial.print(elem.ip_adress);
+		Serial.print(" has website : ");
+		Serial.println(elem.has_website);
+
+	}
 }
 
 void set_pwm0(int pwm)
