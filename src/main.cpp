@@ -1078,6 +1078,9 @@ void setup()
 	tft.printf("STA mode");
 	tft.setCursor(0, 0);
 
+	server.serveStatic("/tripode.ico", SPIFFS, "/tripode.ico");
+
+
 	for (;;)
 	{
 		Serial.print("tour de boucle :");
