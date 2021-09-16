@@ -59,11 +59,13 @@ typedef struct s_data_task
 enum e_wifi_modes
 {
 	NONE_MODE = 0,
-	AP_MODE = 0b0001,
-	STA_MODE = 0b0110,
-	SENSORS_MODE = 0b1010,
-	DFA_MODE = 0b1110,
-	NORM_MASK = 0b0010
+	AP_MASK		= 0b00001,
+	STA_MASK	= 0b00010,
+	STD_MODE	= 0b00100,
+	SENSORS_MODE= 0b01000,
+	DFA_MODE	= 0b01100,
+	AP_MODE		= 0b10000,
+	MODE_MASK	= 0b11100,
 };
 
 t_data_task g_data_task[3];
@@ -76,8 +78,10 @@ TFT_eSPI tft = TFT_eSPI(); // Invoke custom library
 Button2 btn1(BUTTON_1);
 Button2 btn2(BUTTON_2);
 
-e_wifi_modes current_mode;
-bool upd_sending = true;
+// e_wifi_modes current_mode;
+uint8_t current_mode = 0;
+
+bool udp_sending = true;
 // const char* ssid = "Freebox-0E3EAE";
 // const char* password =  "taigaest1chien";
 
@@ -206,21 +210,48 @@ void IRAM_ATTR button1_handler(Button2 &btn)
 		Serial.println("Bouton A pressed");
 		if (current_mode == NONE_MODE)
 		{
-			current_mode = STA_MODE;
+			current_mode = STD_MODE | STA_MASK;
 		}
-		else if (current_mode & NORM_MASK)
+		else if (current_mode & STA_MASK)
 		{
-			if (current_mode == STA_MODE)
+			if ((current_mode & MODE_MASK) == STD_MODE)
 			{
-				current_mode = SENSORS_MODE;
+				current_mode = SENSORS_MODE | STA_MASK;
 			}
-			else if (current_mode == SENSORS_MODE)
+			else if ((current_mode & MODE_MASK) == SENSORS_MODE)
 			{
-				current_mode = DFA_MODE;
+				current_mode = DFA_MODE | STA_MASK;
 			}
-			else if (current_mode == DFA_MODE)
+			else if ((current_mode & MODE_MASK) == DFA_MODE)
 			{
-				current_mode = STA_MODE;
+				current_mode = STD_MODE | STA_MASK;
+			}
+		}
+		else if (current_mode & AP_MASK)
+		{
+			if ((current_mode & MODE_MASK) == STD_MODE)
+			{
+				Serial.printf("----- STD mode : %d\n", current_mode);
+				current_mode = SENSORS_MODE | AP_MASK;
+				Serial.printf("--AF- STD mode : %d\n", current_mode);
+			}
+			else if ((current_mode & MODE_MASK) == SENSORS_MODE)
+			{
+				Serial.printf("----- SENSOR mode : %d\n", current_mode);
+				current_mode = DFA_MODE | AP_MASK;
+				Serial.printf("--AF- SENSOR mode : %d\n", current_mode);
+			}
+			else if ((current_mode & MODE_MASK) == DFA_MODE)
+			{
+				Serial.printf("----- DFA mode : %d\n", current_mode);
+				current_mode = AP_MODE | AP_MASK;
+				Serial.printf("--AF- DFA mode : %d\n", current_mode);
+			}
+			else if ((current_mode & MODE_MASK) == AP_MODE)
+			{
+				Serial.printf("----- Ap mode : %d\n", current_mode);
+				current_mode = STD_MODE | AP_MASK;
+				Serial.printf("--AF- Ap mode : %d\n", current_mode);
 			}
 		}
 	}
@@ -235,11 +266,12 @@ void IRAM_ATTR button2_handler(Button2 &btn)
 		Serial.println("Bouton B pressed");
 		if (current_mode == NONE_MODE)
 		{
-			current_mode = AP_MODE;
+			// current_mode = AP_MODE;
+			current_mode = AP_MODE | AP_MASK;
 		}
-		else if (current_mode & NORM_MASK)
+		else if (current_mode)
 		{
-			upd_sending = !upd_sending;
+			udp_sending = !udp_sending;
 			// oscAddress = oscAddress > 0 ? oscAddress - 1 : 0;
 			// oscAddressChanged = true;
 			// // EEPROM.writeUInt(10, oscAddress);
@@ -258,13 +290,13 @@ void IRAM_ATTR button2_handler(Button2 &btn)
 			// }
 		}
 	}
-	if (click_type == DOUBLE_CLICK)
-	{
-		Serial.println("Bouton B double clicked");
+	// if (click_type == DOUBLE_CLICK)
+	// {
+	// 	Serial.println("Bouton B double clicked");
 
-		// oscAddress = EEPROM.readUInt(10);
-		current_mode = SENSORS_MODE;
-	}
+	// 	// oscAddress = EEPROM.readUInt(10);
+	// 	current_mode = SENSORS_MODE;
+	// }
 }
 
 void button_init()
@@ -1140,6 +1172,15 @@ void ap_setup()
 	Serial.println(myIP);
 	tft.printf("AP addr: %s\n", myIP.toString().c_str());
 	setup_server_for_ap();
+	ledcSetup(motorChannel1, motorFreq, motorResolution);
+	ledcSetup(motorChannel2, motorFreq, motorResolution);
+	ledcSetup(motorChannel3, motorFreq, motorResolution);
+	ledcAttachPin(MOTOR_1, motorChannel1);
+	ledcAttachPin(MOTOR_2, motorChannel2);
+	ledcAttachPin(MOTOR_3, motorChannel3);
+	Udp.begin(localUdpPort);
+
+
 
 
 	xTaskCreatePinnedToCore(update_sta_list, "update_sta_list", 10000, NULL, 1, &Task1, 1);
@@ -1218,6 +1259,16 @@ void setup()
 		while (1)
 			;
 	}
+	gyro.enableDefault();
+	// else
+	// {
+	// 	while (1)
+	// 	{
+	// 		gyro.read();
+	// 		Serial.printf("Gyro : %d | %d | %d\n", gyro.g.x, gyro.g.y, gyro.g.z);
+	// 		delay(100);
+	// 	}
+	// }
 
 	timers[3] = timerBegin(3, 80, true);
 	timerAttachInterrupt(timers[3], &call_buttons, false);
@@ -1257,12 +1308,12 @@ void setup()
 	{
 		Serial.print("tour de boucle :");
 		Serial.println(current_mode);
-		if (current_mode == STA_MODE)
+		if (current_mode & STA_MASK)
 		{
 			sta_setup();
 			break;
 		}
-		else if (current_mode == AP_MODE)
+		else if (current_mode & AP_MASK)
 		{
 			ap_setup();
 			break;
@@ -1347,7 +1398,7 @@ void drawMotorsActivity2()
 
 //create sta list instant
 
-void drawNetworkActivity()
+void drawNetworkActivity(bool is_udp_sending)
 {
 	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
 
@@ -1439,7 +1490,10 @@ void drawNetworkActivity()
 	}
 
 	drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
-
+	if (is_udp_sending)
+	{
+		drawUpdSendingActivity(&drawing_sprite);
+	}
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
 	// sta_list_mutex.lock();
@@ -1879,6 +1933,14 @@ void update_sensors(t_sensors *sensors)
 	sensors->mag.x = mag_event.magnetic.x;
 	sensors->mag.y = mag_event.magnetic.y;
 	sensors->mag.z = mag_event.magnetic.z;
+
+
+	// Serial.printf("Acc  : %02f | %02f | %02f\n", sensors->accel.x, sensors->accel.y, sensors->accel.z);
+	// Serial.printf("Gyro : %02f | %02f | %02f\n", sensors->gyro.x, sensors->gyro.y, sensors->gyro.z);
+	// Serial.printf("Mag  : %02f | %02f | %02f\n", sensors->mag.x, sensors->mag.y, sensors->mag.z);
+
+
+
 }
 
 void sendOscMessage(float dfa_value, t_sensors *sensors, const IPAddress ipOut, const uint32_t portOut)
@@ -2153,7 +2215,8 @@ void udpInitOrca(const IPAddress ipOut, const uint32_t portOut)
 void loop()
 {
 	t_sensors sensors;
-	if (current_mode & NORM_MASK)
+	// if (current_mode & NORM_MASK)
+	if (1)
 	{
 		look_for_udp_message();
 		for (int i = 0; i < 3; i++)
@@ -2169,11 +2232,12 @@ void loop()
 		float dfa_value = updateDFA(sensors);
 		// const IPAddress usine_ip(192,168,100,100);
 		// const unsigned int usine_port = 2002;          // remote port to receive OSC
+		if (0)//////
 		sendOscMessage(dfa_value, &sensors, usine_ip, usine_port);
 
 		// sendUpdMessage((const char*)"write:E;18;8", orca_ip, orca_port);
 		static uint16_t loop_counter = 0;
-		if (upd_sending)
+		if (udp_sending)
 		{
 			if (loop_counter % updMessageRate == 0)
 			{
@@ -2190,23 +2254,23 @@ void loop()
 			loop_counter = loop_counter > 1000 ? 0 : loop_counter + 1;
 		}
 
-		if (current_mode == STA_MODE)
+		if ((current_mode & MODE_MASK) == STD_MODE)
 		{
-			drawMotorsActivity(tft, pwmValues, localUdpPort, ssid, upd_sending);
+			drawMotorsActivity(tft, pwmValues, localUdpPort, ssid, udp_sending);
 		}
-		else if (current_mode == SENSORS_MODE)
+		else if ((current_mode & MODE_MASK) == SENSORS_MODE)
 		{
-			drawSensorsActivity(tft, sensors, oscAddress, upd_sending);
+			drawSensorsActivity(tft, sensors, oscAddress, udp_sending);
 		}
-		else if (current_mode == DFA_MODE)
+		else if ((current_mode & MODE_MASK) == DFA_MODE)
 		{
-			drawAlpha(tft, dfa_value, upd_sending);
+			drawAlpha(tft, dfa_value, udp_sending);
 		}
-	}
-	else if (current_mode == AP_MODE)
-	{
-		drawNetworkActivity();
-		// web();
+		else if ((current_mode & MODE_MASK) == AP_MODE)
+		{
+			drawNetworkActivity(udp_sending);
+			// web();
+		}
 	}
 	//Serial.println(".");
 	delay(25);

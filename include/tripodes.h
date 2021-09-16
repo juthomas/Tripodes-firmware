@@ -115,6 +115,7 @@ double fmap(double x, double in_min, double in_max, double out_min, double out_m
 // ui.c
 void compassArraw(TFT_eSPI tft, TFT_eSprite * sprite, int x, int y, float angle);
 
+void drawUpdSendingActivity(TFT_eSprite *sprite);
 
 void drawCursors(TFT_eSprite *sprite, int x, int y, int w, int h, int min, int max, int value, uint32_t color);
 

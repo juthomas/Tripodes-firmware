@@ -94,7 +94,14 @@ void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort
 	drawing_sprite.setTextColor(TFT_RED);
 	drawing_sprite.printf("Ip : ");
 	drawing_sprite.setTextColor(TFT_WHITE);
-	drawing_sprite.printf("%s\n\n", WiFi.localIP().toString().c_str());
+	if (WiFi.getMode() == WIFI_MODE_AP)
+	{
+		drawing_sprite.printf("%s\n\n", WiFi.softAPIP().toString().c_str());
+	}
+	else
+	{
+		drawing_sprite.printf("%s\n\n", WiFi.localIP().toString().c_str());
+	}
 
 	drawing_sprite.setTextColor(TFT_RED);
 	drawing_sprite.printf("Udp port : ");
