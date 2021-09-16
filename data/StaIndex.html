@@ -3,6 +3,8 @@
 <head>
 	<meta charset="UTF-8">
 	<link rel="icon" href="tripode.ico">
+	<link rel="stylesheet" href="main.css">
+
 
 	<!-- <link rel="stylesheet" href="style.css" /> -->
 	<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css"> -->
@@ -11,7 +13,7 @@
 
 <body>
 </body>
-<p>Tripodes settings</p>
+<h1>Tripodes settings</h1>
 
 <form action="/" method="get" class="form-example">
 	<div class="form-example">
@@ -20,7 +22,7 @@
 	</div>
 	<div class="form-example">
 		<label for="orca_port">Port of Orca device :</label>
-		<input type="text" name="orca_port" id="orca_port" placeholder="Port" value="%ORCAPORT%" required>
+		<input type="text" name="orca_port" id="orca_port" placeholder="Default: 49160" value="%ORCAPORT%" required>
 	</div>
 	<div class="form-example">
 		<input type="submit" value="Update">
@@ -49,18 +51,22 @@
 	<div class="form-example">
 		<label for="fractal_state_pos_x">Fractal state X position :</label>
 		<input type="number" min="0" max="1000" name="fractal_state_pos_x" id="fractal_state_pos_x" placeholder="position" value="%FRACTALSTATEPOSX%" required>
+		<label for="fractal_state_pos_x">Eg: 0, 12 or 24</label>
 	</div>
 	<div class="form-example">
 		<label for="fractal_state_pos_y">Fractal state Y position :</label>
 		<input type="number" min="0" max="1000" name="fractal_state_pos_y" id="fractal_state_pos_y" placeholder="position" value="%FRACTALSTATEPOSY%" required>
+		<label for="fractal_state_pos_y">Eg: 10</label>
 	</div>
 	<div class="form-example">
 		<label for="glyph_pos_x">Glyph X position :</label>
 		<input type="number" min="0" max="1000" name="glyph_pos_x" id="glyph_pos_x" placeholder="position" value="%GLYPHPOSX%" required>
+		<label for="glyph_pos_x">Eg: 48</label>
 	</div>
 	<div class="form-example">
 		<label for="glyph_pos_y">Glyph Y position :</label>
 		<input type="number" min="0" max="1000" name="glyph_pos_y" id="glyph_pos_y" placeholder="position" value="%GLYPHPOSY%" required>
+		<label for="glyph_pos_y">Eg: 6, 35 or 64</label>
 	</div>
 
 

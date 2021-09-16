@@ -1303,6 +1303,7 @@ void setup()
 	tft.setCursor(0, 0);
 
 	server.serveStatic("/tripode.ico", SPIFFS, "/tripode.ico");
+	server.serveStatic("/main.css", SPIFFS, "/main.css");
 
 	for (;;)
 	{
