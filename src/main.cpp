@@ -24,12 +24,16 @@ TaskHandle_t Task1;
 
 std::mutex sta_list_mutex;
 
-
-
 char *ssid;
 char *password;
 char *APssid;
 char *APpassword;
+
+char *tripode_id;
+int16_t fractal_state_pos_x = 0;
+int16_t fractal_state_pos_y = 10;
+int16_t glyph_pos_x = 48;
+int16_t glyph_pos_y = 6;
 
 L3G gyro;
 
@@ -366,8 +370,48 @@ String processor(const String &var)
 		intStr = itoa(orca_port, intStr, 10);
 		String StringPort = String(intStr);
 		free(intStr);
-
 		return (StringPort);
+	}
+	else if (var == "TRIPODEID")
+	{
+		String string_tripode_id = String(tripode_id);
+		return (string_tripode_id);
+	}
+	else if (var == "FRACTALSTATEPOSX")
+	{
+		char *intStr;
+		intStr = (char *)malloc(sizeof(char) * 15);
+		intStr = itoa(fractal_state_pos_x, intStr, 10);
+		String StringPos = String(intStr);
+		free(intStr);
+		return (StringPos);
+	}
+	else if (var == "FRACTALSTATEPOSY")
+	{
+		char *intStr;
+		intStr = (char *)malloc(sizeof(char) * 15);
+		intStr = itoa(fractal_state_pos_y, intStr, 10);
+		String StringPos = String(intStr);
+		free(intStr);
+		return (StringPos);
+	}
+	else if (var == "GLYPHPOSX")
+	{
+		char *intStr;
+		intStr = (char *)malloc(sizeof(char) * 15);
+		intStr = itoa(glyph_pos_x, intStr, 10);
+		String StringPos = String(intStr);
+		free(intStr);
+		return (StringPos);
+	}
+	else if (var == "GLYPHPOSY")
+	{
+		char *intStr;
+		intStr = (char *)malloc(sizeof(char) * 15);
+		intStr = itoa(glyph_pos_y, intStr, 10);
+		String StringPos = String(intStr);
+		free(intStr);
+		return (StringPos);
 	}
 	else if (var == "STASSID")
 	{
@@ -477,7 +521,6 @@ void update_sta_list(void *params)
 		// Serial.println("Before");
 		delay(1000);
 		// Serial.println("After");
-
 	}
 }
 
@@ -702,6 +745,56 @@ void setup_server_for_ap()
 					  set_data_to_csv("usine_port", (char *)buff);
 					  free(buff);
 				  }
+				  if (request->hasParam("tripode_id"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("tripode_id")->value().toCharArray((char *)buff, 50);
+					  if (tripode_id)
+					  {
+						  free(tripode_id);
+					  }
+					  tripode_id = strdup((char *)buff);
+					  set_data_to_csv("tripode_id", (char *)buff);
+					  free(buff);
+				  }
+				  if (request->hasParam("fractal_state_pos_x"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("fractal_state_pos_x")->value().toCharArray((char *)buff, 50);
+					  fractal_state_pos_x = atoi((char *)buff);
+					  set_data_to_csv("fractal_state_pos_x", (char *)buff);
+					  free(buff);
+				  }
+				  if (request->hasParam("fractal_state_pos_y"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("fractal_state_pos_y")->value().toCharArray((char *)buff, 50);
+					  fractal_state_pos_y = atoi((char *)buff);
+					  set_data_to_csv("fractal_state_pos_y", (char *)buff);
+					  free(buff);
+				  }
+				  if (request->hasParam("glyph_pos_x"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("glyph_pos_x")->value().toCharArray((char *)buff, 50);
+					  glyph_pos_x = atoi((char *)buff);
+					  set_data_to_csv("glyph_pos_x", (char *)buff);
+					  free(buff);
+				  }
+				  if (request->hasParam("glyph_pos_y"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("glyph_pos_y")->value().toCharArray((char *)buff, 50);
+					  glyph_pos_y = atoi((char *)buff);
+					  set_data_to_csv("glyph_pos_y", (char *)buff);
+					  free(buff);
+				  }
+
 				  if (request->hasParam("sta_ssid"))
 				  {
 					  uint8_t *buff;
@@ -826,6 +919,57 @@ void setup_server_for_sta()
 					  set_data_to_csv("usine_port", (char *)buff);
 					  free(buff);
 				  }
+
+				  if (request->hasParam("tripode_id"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("tripode_id")->value().toCharArray((char *)buff, 50);
+					  if (tripode_id)
+					  {
+						  free(tripode_id);
+					  }
+					  tripode_id = strdup((char *)buff);
+					  set_data_to_csv("tripode_id", (char *)buff);
+					  free(buff);
+				  }
+				  if (request->hasParam("fractal_state_pos_x"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("fractal_state_pos_x")->value().toCharArray((char *)buff, 50);
+					  fractal_state_pos_x = atoi((char *)buff);
+					  set_data_to_csv("fractal_state_pos_x", (char *)buff);
+					  free(buff);
+				  }
+				  if (request->hasParam("fractal_state_pos_y"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("fractal_state_pos_y")->value().toCharArray((char *)buff, 50);
+					  fractal_state_pos_y = atoi((char *)buff);
+					  set_data_to_csv("fractal_state_pos_y", (char *)buff);
+					  free(buff);
+				  }
+				  if (request->hasParam("glyph_pos_x"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("glyph_pos_x")->value().toCharArray((char *)buff, 50);
+					  glyph_pos_x = atoi((char *)buff);
+					  set_data_to_csv("glyph_pos_x", (char *)buff);
+					  free(buff);
+				  }
+				  if (request->hasParam("glyph_pos_y"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("glyph_pos_y")->value().toCharArray((char *)buff, 50);
+					  glyph_pos_y = atoi((char *)buff);
+					  set_data_to_csv("glyph_pos_y", (char *)buff);
+					  free(buff);
+				  }
+
 				  if (request->hasParam("sta_ssid"))
 				  {
 					  uint8_t *buff;
@@ -931,6 +1075,35 @@ void setup_credentials()
 		usine_port = 2002;
 	}
 
+	if ((tripode_id = get_data_from_csv("tripode_id")) == 0)
+	{
+		tripode_id = strdup("1_1");
+	}
+
+	if (tmp = get_data_from_csv("fractal_state_pos_x"))
+	{
+		fractal_state_pos_x = atoi(tmp);
+		free(tmp);
+	}
+
+	if (tmp = get_data_from_csv("fractal_state_pos_y"))
+	{
+		fractal_state_pos_y = atoi(tmp);
+		free(tmp);
+	}
+
+	if (tmp = get_data_from_csv("glyph_pos_x"))
+	{
+		glyph_pos_x = atoi(tmp);
+		free(tmp);
+	}
+
+	if (tmp = get_data_from_csv("glyph_pos_y"))
+	{
+		glyph_pos_y = atoi(tmp);
+		free(tmp);
+	}
+
 	if ((ssid = get_data_from_csv("sta_ssid")) == 0)
 	{
 		ssid = strdup("tripodesAP");
@@ -957,6 +1130,7 @@ void setup_credentials()
 	// Serial.printf("Ap Password (csv) : \'%s\'\n", get_data_from_csv("ap_password"));
 }
 
+//Setup Motors, Udp here
 void ap_setup()
 {
 	WiFi.mode(WIFI_AP);
@@ -967,8 +1141,8 @@ void ap_setup()
 	tft.printf("AP addr: %s\n", myIP.toString().c_str());
 	setup_server_for_ap();
 
-	xTaskCreatePinnedToCore(update_sta_list, "update_sta_list", 10000, NULL, 1, &Task1, 1); 
-	
+
+	xTaskCreatePinnedToCore(update_sta_list, "update_sta_list", 10000, NULL, 1, &Task1, 1);
 }
 
 void sta_setup()
@@ -1045,7 +1219,6 @@ void setup()
 			;
 	}
 
-
 	timers[3] = timerBegin(3, 80, true);
 	timerAttachInterrupt(timers[3], &call_buttons, false);
 	timerAlarmWrite(timers[3], 50 * 1000, true);
@@ -1079,7 +1252,6 @@ void setup()
 	tft.setCursor(0, 0);
 
 	server.serveStatic("/tripode.ico", SPIFFS, "/tripode.ico");
-
 
 	for (;;)
 	{
@@ -1266,7 +1438,6 @@ void drawNetworkActivity()
 		sta_list_mutex.unlock();
 	}
 
-
 	drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
 
 	drawing_sprite.pushSprite(0, 0);
@@ -1390,7 +1561,7 @@ void sendOscFloatMessage(char *oscPrefix, float oscMessage, const IPAddress ipOu
 
 	strcpy(tmpOscPrefix, oscPrefix);
 	strcat(tmpOscPrefix, "_");
-	strcat(tmpOscPrefix, TRIPODE_ID);
+	strcat(tmpOscPrefix, tripode_id);
 	// OSCMessage msg(oscPrefix);
 	OSCMessage msg(tmpOscPrefix);
 
@@ -1472,9 +1643,9 @@ void sendUdpFractalState(float alpha, const IPAddress ipOut, const uint32_t port
 			   "    \n"
 			   "%cR%cJ\n"
 			   "  X;%d;%d",
-			   speed, convertBase35ToChar(base35), convertBase35ToChar(base35 + 5), FRACTAL_STATE_POS_X, FRACTAL_STATE_POS_Y);
+			   speed, convertBase35ToChar(base35), convertBase35ToChar(base35 + 5), fractal_state_pos_x, fractal_state_pos_y);
 
-	// Udp.printf("write:%cR%c\n  XE;%d;%d", convertBase35ToChar(base35), convertBase35ToChar(base35 + 5), FRACTAL_STATE_POS_X, FRACTAL_STATE_POS_Y);
+	// Udp.printf("write:%cR%c\n  XE;%d;%d", convertBase35ToChar(base35), convertBase35ToChar(base35 + 5), fractal_state_pos_x, fractal_state_pos_y);
 	Udp.endPacket();
 }
 
@@ -1832,7 +2003,7 @@ void drawInOrca(float alpha, const IPAddress ipOut, const uint32_t portOut)
 					 "                                                   \n"
 					 "  CO                                               \n"
 					 "   8G  X                                           \n",
-					 GLYPH_X_POS, GLYPH_Y_POS, ipOut, portOut);
+					 glyph_pos_x, glyph_pos_y, ipOut, portOut);
 		sendOrcaLine("      #XX#                    #XXXXXX#    #XXXXXX# \n"
 					 "      #XX#                    #XXXXXX#    #XXXXXX# \n"
 					 "      #XX#                    #XXXXXX#    #XXXXXX# \n"
@@ -1845,7 +2016,7 @@ void drawInOrca(float alpha, const IPAddress ipOut, const uint32_t portOut)
 					 "      #XX#                    #XXXXXX#    #XX#     \n"
 					 "      #XX#                    #XXXXXX#    #XX#     \n"
 					 "      #XX#                    #XXXXXX#    #XX#     \n",
-					 GLYPH_X_POS, GLYPH_Y_POS + 5, ipOut, portOut);
+					 glyph_pos_x, glyph_pos_y + 5, ipOut, portOut);
 		sendOrcaLine("      #XX#                    #XXXXXX#    #XX#     \n"
 					 "      #XX#                    #XXXXXX#    #XX#     \n"
 					 "      #XX#                    #XXXXXX#    #XX#     \n"
@@ -1858,7 +2029,7 @@ void drawInOrca(float alpha, const IPAddress ipOut, const uint32_t portOut)
 					 "      #XXXXXX#                    #XX#    #XXXXXX# \n"
 					 "      #XXXXXX#                    #XX#    #XXXXXX# \n"
 					 "      #XXXXXX#                    #XX#    #XXXXXX# \n",
-					 GLYPH_X_POS, GLYPH_Y_POS + 17, ipOut, portOut);
+					 glyph_pos_x, glyph_pos_y + 17, ipOut, portOut);
 	}
 	else if (alpha <= 0.9)
 	{
@@ -1867,7 +2038,7 @@ void drawInOrca(float alpha, const IPAddress ipOut, const uint32_t portOut)
 					 "                                                   \n"
 					 "  CO                                               \n"
 					 "   8G  X                                           \n",
-					 GLYPH_X_POS, GLYPH_Y_POS, ipOut, portOut);
+					 glyph_pos_x, glyph_pos_y, ipOut, portOut);
 		sendOrcaLine("      #XX#        #XX#        #XXXXXX#    #XXXXXX# \n"
 					 "      #XX#        #XX#        #XXXXXX#    #XXXXXX# \n"
 					 "      #XX#        #XX#        #XXXXXX#    #XXXXXX# \n"
@@ -1880,7 +2051,7 @@ void drawInOrca(float alpha, const IPAddress ipOut, const uint32_t portOut)
 					 "      #XX#        #XXXXXX#                #XX#     \n"
 					 "      #XX#        #XXXXXX#                #XX#     \n"
 					 "      #XX#        #XXXXXX#                #XX#     \n",
-					 GLYPH_X_POS, GLYPH_Y_POS + 5, ipOut, portOut);
+					 glyph_pos_x, glyph_pos_y + 5, ipOut, portOut);
 		sendOrcaLine("      #XX#        #XXXXXX#                #XX#     \n"
 					 "      #XX#        #XXXXXX#                #XX#     \n"
 					 "      #XX#        #XXXXXX#                #XX#     \n"
@@ -1893,7 +2064,7 @@ void drawInOrca(float alpha, const IPAddress ipOut, const uint32_t portOut)
 					 "      #XXXXXX#    #XXXXXX#                #XXXXXX# \n"
 					 "      #XXXXXX#    #XXXXXX#                #XXXXXX# \n"
 					 "      #XXXXXX#    #XXXXXX#                #XXXXXX# \n",
-					 GLYPH_X_POS, GLYPH_Y_POS + 17, ipOut, portOut);
+					 glyph_pos_x, glyph_pos_y + 17, ipOut, portOut);
 	}
 	else if (alpha <= 1.1)
 	{
@@ -1902,7 +2073,7 @@ void drawInOrca(float alpha, const IPAddress ipOut, const uint32_t portOut)
 					 "                                                   \n"
 					 "  CO                                               \n"
 					 "   8G  X                                           \n",
-					 GLYPH_X_POS, GLYPH_Y_POS, ipOut, portOut);
+					 glyph_pos_x, glyph_pos_y, ipOut, portOut);
 		sendOrcaLine("                  #XX#        #XXXXXX#    #XXXXXX# \n"
 					 "                  #XX#        #XXXXXX#    #XXXXXX# \n"
 					 "                  #XX#        #XXXXXX#    #XXXXXX# \n"
@@ -1915,7 +2086,7 @@ void drawInOrca(float alpha, const IPAddress ipOut, const uint32_t portOut)
 					 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
 					 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
 					 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n",
-					 GLYPH_X_POS, GLYPH_Y_POS + 5, ipOut, portOut);
+					 glyph_pos_x, glyph_pos_y + 5, ipOut, portOut);
 		sendOrcaLine("      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
 					 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
 					 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
@@ -1928,7 +2099,7 @@ void drawInOrca(float alpha, const IPAddress ipOut, const uint32_t portOut)
 					 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n"
 					 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n"
 					 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n",
-					 GLYPH_X_POS, GLYPH_Y_POS + 17, ipOut, portOut);
+					 glyph_pos_x, glyph_pos_y + 17, ipOut, portOut);
 	}
 	else
 	{
@@ -1937,7 +2108,7 @@ void drawInOrca(float alpha, const IPAddress ipOut, const uint32_t portOut)
 					 "                                                   \n"
 					 "  CO                                               \n"
 					 "   8G  X                                           \n",
-					 GLYPH_X_POS, GLYPH_Y_POS, ipOut, portOut);
+					 glyph_pos_x, glyph_pos_y, ipOut, portOut);
 		sendOrcaLine("      #XX#        #XX#        #XXXXXX#    #XXXXXX# \n"
 					 "      #XX#        #XX#        #XXXXXX#    #XXXXXX# \n"
 					 "      #XX#        #XX#        #XXXXXX#    #XXXXXX# \n"
@@ -1950,7 +2121,7 @@ void drawInOrca(float alpha, const IPAddress ipOut, const uint32_t portOut)
 					 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
 					 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
 					 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n",
-					 GLYPH_X_POS, GLYPH_Y_POS + 5, ipOut, portOut);
+					 glyph_pos_x, glyph_pos_y + 5, ipOut, portOut);
 		sendOrcaLine("      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
 					 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
 					 "      #XX#        #XXXXXX#    #XXXXXX#    #XX#     \n"
@@ -1963,7 +2134,7 @@ void drawInOrca(float alpha, const IPAddress ipOut, const uint32_t portOut)
 					 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n"
 					 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n"
 					 "      #XXXXXX#    #XXXXXX#        #XX#    #XXXXXX# \n",
-					 GLYPH_X_POS, GLYPH_Y_POS + 17, ipOut, portOut);
+					 glyph_pos_x, glyph_pos_y + 17, ipOut, portOut);
 	}
 }
 

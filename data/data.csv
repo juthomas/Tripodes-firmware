@@ -6,3 +6,8 @@ sta_ssid,tripodesAP
 sta_password,44448888
 ap_ssid,tripodesAP
 ap_password,44448888
+tripode_id,1_1
+fractal_state_pos_x,0
+fractal_state_pos_y,10
+glyph_pos_x,48
+glyph_pos_y,6

@@ -43,6 +43,35 @@
 
 <form action="/" method="get" class="form-example">
 	<div class="form-example">
+		<label for="tripode_id">Tripode identifier :</label>
+		<input type="text" name="tripode_id" id="tripode_id" placeholder="Tripode ID" value="%TRIPODEID%" required>
+	</div>
+	<div class="form-example">
+		<label for="fractal_state_pos_x">Fractal state X position :</label>
+		<input type="number" min="0" max="1000" name="fractal_state_pos_x" id="fractal_state_pos_x" placeholder="position" value="%FRACTALSTATEPOSX%" required>
+	</div>
+	<div class="form-example">
+		<label for="fractal_state_pos_y">Fractal state Y position :</label>
+		<input type="number" min="0" max="1000" name="fractal_state_pos_y" id="fractal_state_pos_y" placeholder="position" value="%FRACTALSTATEPOSY%" required>
+	</div>
+	<div class="form-example">
+		<label for="glyph_pos_x">Glyph X position :</label>
+		<input type="number" min="0" max="1000" name="glyph_pos_x" id="glyph_pos_x" placeholder="position" value="%GLYPHPOSX%" required>
+	</div>
+	<div class="form-example">
+		<label for="glyph_pos_y">Glyph Y position :</label>
+		<input type="number" min="0" max="1000" name="glyph_pos_y" id="glyph_pos_y" placeholder="position" value="%GLYPHPOSY%" required>
+	</div>
+
+
+	<div class="form-example">
+		<input type="submit" value="Update">
+	</div>
+</form>
+
+
+<form action="/" method="get" class="form-example">
+	<div class="form-example">
 		<label for="sta_ssid">STA SSID :</label>
 		<input type="text" name="sta_ssid" id="sta_ssid" placeholder="Sta Ssid" value="%STASSID%" required>
 	</div>
