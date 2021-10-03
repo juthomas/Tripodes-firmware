@@ -60,12 +60,23 @@ void drawBatteryLevel(TFT_eSprite *sprite, int x, int y, float voltage)
 	(*sprite).drawRect(x, y, 30, 10, color2);
 }
 
-void drawUpdSendingActivity(TFT_eSprite *sprite)
+void drawUpdSendingActivity(TFT_eSprite *sprite, bool udp_activity, bool osc_activity)
 {
-	(*sprite).fillRect(0, 238, 135, 2, TFT_RED);
+	if (udp_activity == true && osc_activity == true)
+	{
+		(*sprite).fillRect(0, 238, 135, 2, TFT_PURPLE);
+	}
+	else if (udp_activity == true && osc_activity == false)
+	{
+		(*sprite).fillRect(0, 238, 135, 2, TFT_RED);
+	}
+	else if (udp_activity == false && osc_activity == true)
+	{
+		(*sprite).fillRect(0, 238, 135, 2, TFT_BLUE);
+	}
 }
 
-void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort, const char *ssid, bool is_upd_sending)
+void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort, const char *ssid, bool is_upd_sending, bool is_osc_sending)
 {
 	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
 
@@ -142,15 +153,12 @@ void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort
 	{
 		drawing_sprite.fillCircle(108, 190, pwmValues[2] / 11, TFT_BLUE);
 	}
-	if (is_upd_sending)
-	{
-		drawUpdSendingActivity(&drawing_sprite);
-	}
+	drawUpdSendingActivity(&drawing_sprite, is_upd_sending, is_osc_sending);
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
 }
 
-void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool is_upd_sending)
+void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool is_upd_sending, bool is_osc_sending)
 {
 	static bool isCalibrated = false;
 	static int calMinX = 0;
@@ -297,10 +305,7 @@ void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bo
 	Serial.print(" Z: ");
 	Serial.println((int) sensors.gyro.z);
 
-	if (is_upd_sending)
-	{
-		drawUpdSendingActivity(&drawing_sprite);
-	}
+	drawUpdSendingActivity(&drawing_sprite, is_upd_sending, is_osc_sending);
 
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
@@ -481,7 +486,7 @@ void printSign(TFT_eSprite *drawing_sprite, float alpha)
 }
 
 
-void drawAlpha(TFT_eSPI tft, float alpha, bool is_upd_sending)
+void drawAlpha(TFT_eSPI tft, float alpha, bool is_upd_sending, bool is_osc_sending)
 {
 	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
 	drawing_sprite.setColorDepth(8);
@@ -554,10 +559,7 @@ void drawAlpha(TFT_eSPI tft, float alpha, bool is_upd_sending)
 	{
 		Serial.printf("complex\n");
 	}
-	if (is_upd_sending)
-	{
-		drawUpdSendingActivity(&drawing_sprite);
-	}
+	drawUpdSendingActivity(&drawing_sprite, is_upd_sending, is_osc_sending);
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
 

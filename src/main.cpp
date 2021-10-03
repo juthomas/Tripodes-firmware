@@ -35,6 +35,7 @@ int16_t fractal_state_pos_y = 10;
 int16_t glyph_pos_x = 48;
 int16_t glyph_pos_y = 6;
 
+
 L3G gyro;
 
 Adafruit_LSM303_Accel_Unified accel = Adafruit_LSM303_Accel_Unified(54321);
@@ -82,6 +83,8 @@ Button2 btn2(BUTTON_2);
 uint8_t current_mode = 0;
 
 bool udp_sending = true;
+bool osc_sending = true;
+
 // const char* ssid = "Freebox-0E3EAE";
 // const char* password =  "taigaest1chien";
 
@@ -272,31 +275,13 @@ void IRAM_ATTR button2_handler(Button2 &btn)
 		else if (current_mode)
 		{
 			udp_sending = !udp_sending;
-			// oscAddress = oscAddress > 0 ? oscAddress - 1 : 0;
-			// oscAddressChanged = true;
-			// // EEPROM.writeUInt(10, oscAddress);
-			// // EEPROM.commit();
-			// if (current_mode == STA_MODE)
-			// {
-			// 	current_mode = DFA_MODE;
-			// }
-			// else if (current_mode == SENSORS_MODE)
-			// {
-			// 	current_mode = STA_MODE;
-			// }
-			// else if (current_mode == DFA_MODE)
-			// {
-			// 	current_mode = SENSORS_MODE;
-			// }
+
 		}
 	}
-	// if (click_type == DOUBLE_CLICK)
-	// {
-	// 	Serial.println("Bouton B double clicked");
-
-	// 	// oscAddress = EEPROM.readUInt(10);
-	// 	current_mode = SENSORS_MODE;
-	// }
+	if (click_type == DOUBLE_CLICK)
+	{
+		osc_sending = !osc_sending;
+	}
 }
 
 void button_init()
@@ -1399,7 +1384,7 @@ void drawMotorsActivity2()
 
 //create sta list instant
 
-void drawNetworkActivity(bool is_udp_sending)
+void drawNetworkActivity(bool is_udp_sending, bool is_osc_sending)
 {
 	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
 
@@ -1491,10 +1476,7 @@ void drawNetworkActivity(bool is_udp_sending)
 	}
 
 	drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
-	if (is_udp_sending)
-	{
-		drawUpdSendingActivity(&drawing_sprite);
-	}
+	drawUpdSendingActivity(&drawing_sprite, is_udp_sending, is_osc_sending);
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
 	// sta_list_mutex.lock();
@@ -2233,8 +2215,10 @@ void loop()
 		float dfa_value = updateDFA(sensors);
 		// const IPAddress usine_ip(192,168,100,100);
 		// const unsigned int usine_port = 2002;          // remote port to receive OSC
-		if (0)//////
-		sendOscMessage(dfa_value, &sensors, usine_ip, usine_port);
+		if (osc_sending)
+		{
+			sendOscMessage(dfa_value, &sensors, usine_ip, usine_port);
+		}
 
 		// sendUpdMessage((const char*)"write:E;18;8", orca_ip, orca_port);
 		static uint16_t loop_counter = 0;
@@ -2257,19 +2241,19 @@ void loop()
 
 		if ((current_mode & MODE_MASK) == STD_MODE)
 		{
-			drawMotorsActivity(tft, pwmValues, localUdpPort, ssid, udp_sending);
+			drawMotorsActivity(tft, pwmValues, localUdpPort, ssid, udp_sending, osc_sending);
 		}
 		else if ((current_mode & MODE_MASK) == SENSORS_MODE)
 		{
-			drawSensorsActivity(tft, sensors, oscAddress, udp_sending);
+			drawSensorsActivity(tft, sensors, oscAddress, udp_sending, osc_sending);
 		}
 		else if ((current_mode & MODE_MASK) == DFA_MODE)
 		{
-			drawAlpha(tft, dfa_value, udp_sending);
+			drawAlpha(tft, dfa_value, udp_sending, osc_sending);
 		}
 		else if ((current_mode & MODE_MASK) == AP_MODE)
 		{
-			drawNetworkActivity(udp_sending);
+			drawNetworkActivity(udp_sending, osc_sending);
 			// web();
 		}
 	}
