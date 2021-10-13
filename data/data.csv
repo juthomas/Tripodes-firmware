@@ -1,7 +1,7 @@
-orca_ip,0.0.0.0
-orca_port,0000
-usine_ip,0.0.0.0
-usine_port,0000
+orca_ip,192.168.4.2
+orca_port,49160
+usine_ip,192.168.4.2
+usine_port,2002
 sta_ssid,tripodesAP
 sta_password,44448888
 ap_ssid,tripodesAP
