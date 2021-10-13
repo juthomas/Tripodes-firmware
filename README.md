@@ -59,7 +59,7 @@ Changer les Ports et Adresses sur l'interface WEB puis cliquer sur "Update"
 
 ### Activation de l'UDP et de l'OSC
 
-Une fois en mode "Station" ou en mode "Access Point" (Appui sur le bouton gauche ou droit au demarage du tripode),
-Cliquer une fois pour le passage en mode "Envoi UDP" (barre rouge)
-Double cliquer pour le passage en mode "Envoi OSC" (barre bleue)
+Une fois en mode "Station" ou en mode "Access Point" (Appui sur le bouton gauche ou droit au demarage du tripode),<br/>
+Cliquer une fois pour le passage en mode "Envoi UDP" (barre rouge)<br/>
+Double cliquer pour le passage en mode "Envoi OSC" (barre bleue)<br/>
 => Combinaison des envois UPD & OSC = barre violette
