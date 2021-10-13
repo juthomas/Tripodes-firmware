@@ -29,16 +29,37 @@ Cliquer sur "Platformio > PROJET TAKS > Default > Miscellaneous > Update All"
 
 ![alt text](https://github.com/juthomas/Chemical_Orca/blob/master/README_images/Update_Project.png)
 
-### Mise a jour des identifiants WIFI
-
-dans "src" > "main.cpp", modifier  
-  
-  `[76] const char* ssid = "tripodesAP"; `  
-  `[78] const char* password =  "44448888"; `  
-   
 
 ### Televersement du projet
 
 Cliquer sur "Platformio > PROJET TAKS > Default > General > Upload"
 
 ![alt text](https://github.com/juthomas/Chemical_Orca/blob/master/README_images/Upload_Project.png)
+
+
+Cliquer sur "Platformio > PROJET TAKS > Default > Platform > Build Filesystem Image"
+
+![alt text](https://github.com/juthomas/Chemical_Orca/blob/master/README_images/BuildFilesystemImage.png)
+
+
+Cliquer sur "Platformio > PROJET TAKS > Default > Platform > Upload Filesystem Image"
+
+![alt text](https://github.com/juthomas/Chemical_Orca/blob/master/README_images/UploadFilesystemImage.png)
+
+
+### Configuration WIFI, UDP et OSC
+
+Allumer le tripode, appuyer sur le bouton de gauche,
+
+Connecter votre ordinateur sur le reseau wifi du tripode (SSID: tripodesAP, MDP: 44448888)
+
+Ouvrir un navigateur WEB a l'adresse "http://192.168.4.1"
+
+Changer les Ports et Adresses sur l'interface WEB puis cliquer sur "Update"
+
+### Activation de l'UDP et de l'OSC
+
+Une fois en mode "Station" ou en mode "Access Point" (Appui sur le bouton gauche ou droit au demarage du tripode),
+Cliquer une fois pour le passage en mode "Envoi UDP" (barre rouge)
+Double cliquer pour le passage en mode "Envoi OSC" (barre bleue)
+=> Combinaison des envois UPD & OSC = barre violette
