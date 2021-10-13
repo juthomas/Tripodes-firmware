@@ -82,8 +82,8 @@ Button2 btn2(BUTTON_2);
 // e_wifi_modes current_mode;
 uint8_t current_mode = 0;
 
-bool udp_sending = true;
-bool osc_sending = true;
+bool udp_sending = false;
+bool osc_sending = false;
 
 // const char* ssid = "Freebox-0E3EAE";
 // const char* password =  "taigaest1chien";
