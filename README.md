@@ -39,12 +39,12 @@ Cliquer sur "Platformio > PROJET TAKS > Default > General > Upload"
 
 Cliquer sur "Platformio > PROJET TAKS > Default > Platform > Build Filesystem Image"
 
-![alt text](https://github.com/juthomas/Chemical_Orca/blob/master/README_images/BuildFilesystemImage.png)
+![alt text](https://github.com/juthomas/Tripodes-firmware/blob/master/README_images/BuildFilesystemImage.png)
 
 
 Cliquer sur "Platformio > PROJET TAKS > Default > Platform > Upload Filesystem Image"
 
-![alt text](https://github.com/juthomas/Chemical_Orca/blob/master/README_images/UploadFilesystemImage.png)
+![alt text](https://github.com/juthomas/Tripodes-firmware/blob/master/README_images/UploadFilesystemImage.png)
 
 
 ### Configuration WIFI, UDP et OSC
