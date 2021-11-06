@@ -78,6 +78,7 @@ void drawUpdSendingActivity(TFT_eSprite *sprite, bool udp_activity, bool osc_act
 
 void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort, const char *ssid, bool is_upd_sending, bool is_osc_sending)
 {
+
 	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
 
 	drawing_sprite.setColorDepth(8);
@@ -154,8 +155,10 @@ void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort
 		drawing_sprite.fillCircle(108, 190, pwmValues[2] / 11, TFT_BLUE);
 	}
 	drawUpdSendingActivity(&drawing_sprite, is_upd_sending, is_osc_sending);
+	
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
+
 }
 
 void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool is_upd_sending, bool is_osc_sending)

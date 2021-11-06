@@ -16,7 +16,16 @@
 #include <EEPROM.h>
 #include <OSCMessage.h>
 #include <string>  
+#include <mutex>
+
 #include <sstream>
+#include "Audio.h"
+
+#define I2S_DOUT      17  // DIN connection
+#define I2S_BCLK      26  // Bit clock
+#define I2S_LRC       25  // Left Right Clock
+ 
+
 #define EEPROM_SIZE 512
 
 #ifndef TFT_DISPOFF
@@ -71,6 +80,8 @@
 
 //4 => 140
 //3 => 150
+extern std::mutex audio_mutex;
+
 
 const IPAddress local_IP(10, 87, 210, 202);
 
@@ -133,6 +144,9 @@ float mean(float *tab, size_t tab_size);
 
 
 void	web();
+
+
+
 
 
 

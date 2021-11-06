@@ -104,4 +104,18 @@
 	</div>
 </form>
 
+<form action="/" method="get" class="form-example">
+	<div class="form-example">
+		<label for="audio_host">AUDIO HOST :</label>
+		<input type="text" name="audio_host" id="audio_host" placeholder="Audio Host" value="%AUDIOHOST%" required>
+	</div>
+	<div class="form-example">
+		<label for="audio_volume">AUDIO VOLUME (1-21) :</label>
+		<input type="number" min="0" max="21" name="audio_volume" id="audio_volume" placeholder="volume" value="%AUDIOVOLUME%" required>
+	</div>
+	<div class="form-example">
+		<input type="submit" value="Update">
+	</div>
+</form>
+
 </html>
