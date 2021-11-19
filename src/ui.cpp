@@ -1,4 +1,6 @@
 #include "tripodes.h"
+extern char *tripode_id;
+
 
 void compassArraw(TFT_eSPI tft, TFT_eSprite * sprite, int x, int y, float angle)
 {
@@ -124,7 +126,9 @@ void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort
 	drawing_sprite.setTextColor(TFT_RED);
 	drawing_sprite.printf("Tripode Id : ");
 	drawing_sprite.setTextColor(TFT_WHITE);
-	drawing_sprite.printf("%s\n", TRIPODE_ID);
+	drawing_sprite.printf("%s\n", tripode_id);
+	// drawing_sprite.printf("%s\n", TRIPODE_ID);
+	
 	drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
 
 	//uint32_t color1 = TFT_BLUE;
