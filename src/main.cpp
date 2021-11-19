@@ -968,8 +968,8 @@ void setup_server_for_ap()
 				  if (request->hasParam("audio_host"))
 				  {
 					  					  uint8_t *buff;
-					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 200);
-					  request->getParam("audio_host")->value().toCharArray((char *)buff, 200);
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 250);
+					  request->getParam("audio_host")->value().toCharArray((char *)buff, 250);
 					  if (audioHost)
 					  {
 						  free(audioHost);
@@ -1168,8 +1168,8 @@ void setup_server_for_sta()
 				  if (request->hasParam("audio_host"))
 				  {
 					  uint8_t *buff;
-					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
-					  request->getParam("audio_host")->value().toCharArray((char *)buff, 50);
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 250);
+					  request->getParam("audio_host")->value().toCharArray((char *)buff, 250);
 					  if (audioHost)
 					  {
 						  free(audioHost);
