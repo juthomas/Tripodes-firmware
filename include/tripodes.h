@@ -106,6 +106,7 @@ typedef struct	s_sensors{
 	t_float3	accel;
 	t_float3	gyro;
 	t_float3	mag;
+	uint16_t	touch_value;
 }				t_sensors;
 
 // main.c
@@ -129,7 +130,7 @@ void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bo
 
 void drawAlpha(TFT_eSPI tft, float alpha, bool is_upd_sending, bool is_osc_sending);
 
-void drawTouchActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool is_upd_sending, bool is_osc_sending);
+void drawTouchActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool is_upd_sending, bool is_osc_sending, uint16_t touchValue);
 
 
 //dfa.cpp

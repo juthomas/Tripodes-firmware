@@ -2209,6 +2209,38 @@ void udpInitOrca(const IPAddress ipOut, const uint32_t portOut)
 	}
 }
 
+
+void	update_touch_value(t_sensors *sensors)
+{
+	uint16_t refinement_size = 5;//Valeur a avoir dans le site web
+	static uint16_t *value_history = 0;
+	static uint16_t current_index = 0;
+
+
+	if (value_history == 0)
+	{
+		value_history = (uint16_t*)malloc(sizeof(uint16_t) * refinement_size);
+		for (uint16_t i = 0; i < refinement_size; i++)
+		{
+			value_history[i] = 0;
+		}
+	}
+	value_history[current_index] = touchRead(12);
+
+	sensors->touch_value = 0;
+	for (uint16_t i = 0; i < refinement_size; i++)
+	{
+		sensors->touch_value += value_history[i];
+	}
+	sensors->touch_value /= refinement_size;
+
+	current_index = current_index + 1 >= refinement_size ? 0 : current_index + 1;
+
+
+
+//  touchRead(12);
+}
+
 void loop()
 {
 	t_sensors sensors;
@@ -2226,6 +2258,7 @@ void loop()
 			}
 		}
 		update_sensors(&sensors);
+		update_touch_value(&sensors);
 		float dfa_value = updateDFA(sensors);
 		// const IPAddress usine_ip(192,168,100,100);
 		// const unsigned int usine_port = 2002;          // remote port to receive OSC
@@ -2272,7 +2305,7 @@ void loop()
 		}
 		else if ((current_mode & MODE_MASK) == TOUCH_MODE)
 		{
-			drawTouchActivity(tft, sensors, oscAddress, udp_sending, osc_sending);
+			drawTouchActivity(tft, sensors, oscAddress, udp_sending, osc_sending, sensors.touch_value);
 		}
 	}
 	//Serial.println(".");

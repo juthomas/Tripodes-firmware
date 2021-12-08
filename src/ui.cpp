@@ -590,7 +590,7 @@ void animateHand(TFT_eSPI tft, TFT_eSprite * sprite, int touch, int treshold)
 
 }
 
-void drawTouchActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool is_upd_sending, bool is_osc_sending)
+void drawTouchActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool is_upd_sending, bool is_osc_sending, uint16_t touchValue)
 {
 	static bool isCalibrated = false;
 	static int calMinX = 0;
@@ -604,7 +604,6 @@ void drawTouchActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool
 	drawing_sprite.createSprite(tft.width(), tft.height());
 
 	drawing_sprite.fillSprite(TFT_BLACK);
-	uint16_t touchValue = touchRead(12);
 	animateHand(tft,&drawing_sprite, touchValue, 25);
 
 	drawing_sprite.setTextSize(1);
