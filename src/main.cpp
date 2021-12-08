@@ -66,6 +66,7 @@ enum e_wifi_modes
 	SENSORS_MODE= 0b01000,
 	DFA_MODE	= 0b01100,
 	AP_MODE		= 0b10000,
+	TOUCH_MODE	= 0b10100,
 	MODE_MASK	= 0b11100,
 };
 
@@ -227,8 +228,13 @@ void IRAM_ATTR button1_handler(Button2 &btn)
 			}
 			else if ((current_mode & MODE_MASK) == DFA_MODE)
 			{
+				current_mode = TOUCH_MODE | STA_MASK;
+			}
+			else if ((current_mode & MODE_MASK) == TOUCH_MODE)
+			{
 				current_mode = STD_MODE | STA_MASK;
 			}
+
 		}
 		else if (current_mode & AP_MASK)
 		{
@@ -253,9 +259,17 @@ void IRAM_ATTR button1_handler(Button2 &btn)
 			else if ((current_mode & MODE_MASK) == AP_MODE)
 			{
 				Serial.printf("----- Ap mode : %d\n", current_mode);
+				current_mode = TOUCH_MODE | AP_MASK;
+				Serial.printf("--AF- Ap mode : %d\n", current_mode);
+			}
+			else if ((current_mode & MODE_MASK) == TOUCH_MODE)
+			{
+				Serial.printf("----- Ap mode : %d\n", current_mode);
 				current_mode = STD_MODE | AP_MASK;
 				Serial.printf("--AF- Ap mode : %d\n", current_mode);
 			}
+
+
 		}
 	}
 }
@@ -2256,9 +2270,14 @@ void loop()
 			drawNetworkActivity(udp_sending, osc_sending);
 			// web();
 		}
+		else if ((current_mode & MODE_MASK) == TOUCH_MODE)
+		{
+			drawTouchActivity(tft, sensors, oscAddress, udp_sending, osc_sending);
+		}
 	}
 	//Serial.println(".");
 	delay(25);
 	// delay(500);
+	Serial.printf("touch :%d\n", touchRead(12));
 	// put your main code here, to run repeatedly:
 }

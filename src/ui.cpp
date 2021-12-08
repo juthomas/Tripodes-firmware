@@ -1,4 +1,5 @@
 #include "tripodes.h"
+#include "img.h"
 extern char *tripode_id;
 
 
@@ -331,11 +332,6 @@ void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bo
 	float accel_normal = map(sqrtf(sensors.accel.x * sensors.accel.x \
 		 + sensors.accel.y * sensors.accel.y \
 		 + sensors.accel.z * sensors.accel.z), 0, 40, 0, 100);
-
-
-
-
-
 }
 
 void printSign(TFT_eSprite *drawing_sprite, float alpha)
@@ -567,4 +563,75 @@ void drawAlpha(TFT_eSPI tft, float alpha, bool is_upd_sending, bool is_osc_sendi
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
 
+}
+
+
+
+void animateHand(TFT_eSPI tft, TFT_eSprite * sprite, int touch, int treshold)
+{
+
+	TFT_eSprite direction = TFT_eSprite(&tft);
+	direction.setColorDepth(8);
+	direction.createSprite(128, 128);
+	direction.setPivot(64, 64);
+
+		// tft.color565()
+
+		direction.drawXBitmap(10,10,touch_bits, touch_width, touch_height, TFT_BLACK, tft.color565(255 - touch * 3, 255 - touch * 3 , 255 - touch * 3 ));
+	// direction.pushRotated(&drawing_sprite, -33);
+
+	TFT_eSprite directionBack = TFT_eSprite(&tft);
+	directionBack.setColorDepth(8);
+	directionBack.createSprite(150, 150);
+
+	direction.pushRotated(&directionBack, -66 + touch);
+
+	directionBack.pushToSprite((TFT_eSprite*)sprite,(int32_t) -30,(int32_t) 90 - touch * 2);
+
+}
+
+void drawTouchActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool is_upd_sending, bool is_osc_sending)
+{
+	static bool isCalibrated = false;
+	static int calMinX = 0;
+	static int calMaxX = 0;
+	static int calMinY = 0;
+	static int calMaxY = 0;
+
+
+	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
+	drawing_sprite.setColorDepth(8);
+	drawing_sprite.createSprite(tft.width(), tft.height());
+
+	drawing_sprite.fillSprite(TFT_BLACK);
+	uint16_t touchValue = touchRead(12);
+	animateHand(tft,&drawing_sprite, touchValue, 25);
+
+	drawing_sprite.setTextSize(1);
+	drawing_sprite.setTextFont(1);
+	drawing_sprite.setTextColor(TFT_GREEN);
+	drawing_sprite.setTextDatum(MC_DATUM);
+	drawing_sprite.setCursor(0, 0);
+
+	uint16_t v = analogRead(ADC_PIN);
+	float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (VREF / 1000.0);
+	drawing_sprite.setTextColor(TFT_RED);
+	drawing_sprite.printf("Voltage : ");
+	drawing_sprite.setTextColor(TFT_WHITE);
+	drawing_sprite.printf("%.2fv\n\n", battery_voltage);
+	// drawing_sprite.setTextColor(TFT_WHITE);
+	drawing_sprite.setTextColor(TFT_RED);
+	drawing_sprite.printf("Touch : ");
+	drawing_sprite.setTextColor(TFT_WHITE);
+	drawing_sprite.printf("%d\n\n", touchValue);
+	drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
+
+
+
+
+
+	drawUpdSendingActivity(&drawing_sprite, is_upd_sending, is_osc_sending);
+
+	drawing_sprite.pushSprite(0, 0);
+	drawing_sprite.deleteSprite();
 }

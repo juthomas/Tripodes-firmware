@@ -122,11 +122,15 @@ void drawCursors(TFT_eSprite *sprite, int x, int y, int w, int h, int min, int m
 void drawBatteryLevel(TFT_eSprite *sprite, int x, int y, float voltage);
 
 
+
 void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort, const char *ssid, bool is_upd_sending, bool is_osc_sending);
 
 void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool is_upd_sending, bool is_osc_sending);
 
 void drawAlpha(TFT_eSPI tft, float alpha, bool is_upd_sending, bool is_osc_sending);
+
+void drawTouchActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool is_upd_sending, bool is_osc_sending);
+
 
 //dfa.cpp
 float mean(float *tab, size_t tab_size);
