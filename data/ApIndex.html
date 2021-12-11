@@ -103,6 +103,23 @@
 	</div>
 </form>
 
+<form action="/" method="get" class="form-example">
+	<div class="form-example">
+		<label for="touch_refinement">TOUCH REFINEMENT :</label>
+		<input type="range" name="touch_refinement" id="touch_refinement"  value="%TOUCHREFINEMENT%" min="1" max="10" oninput="this.nextElementSibling.value = this.value">
+		<output>%TOUCHREFINEMENT%</output>
+	</div>
+	<div class="form-example">
+		<label for="touch_threshold">TOUCH THRESHOLD :</label>
+		<input type="number" min="0" max="100" name="touch_threshold" id="touch_threshold" placeholder="threshold" value="%TOUCHTHRESHOLD%" required>
+
+	</div>
+	<div class="form-example">
+		<input type="submit" value="Update">
+	</div>
+</form>
+
+
 <p>Liste des stations :</p>
 %STALIST%
 </html>

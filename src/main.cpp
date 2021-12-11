@@ -23,6 +23,8 @@
 TaskHandle_t Task1;
 
 std::mutex sta_list_mutex;
+std::mutex touch_refinement_mutex;
+std::mutex touch_threshold_mutex;
 
 char *ssid;
 char *password;
@@ -35,6 +37,8 @@ int16_t fractal_state_pos_y = 10;
 int16_t glyph_pos_x = 48;
 int16_t glyph_pos_y = 6;
 
+uint8_t touch_refinement = 3;
+uint8_t touch_threshold = 20;
 
 L3G gyro;
 
@@ -464,6 +468,30 @@ String processor(const String &var)
 		String string_password = String(APpassword);
 		return (string_password);
 	}
+	else if (var == "TOUCHREFINEMENT")
+	{
+		char *intStr;
+		intStr = (char *)malloc(sizeof(char) * 15);
+		touch_refinement_mutex.lock();
+		intStr = itoa((int)touch_refinement, intStr, 10);
+		touch_refinement_mutex.unlock();
+		String StringPos = String(intStr);
+		free(intStr);
+		return (StringPos);
+	}
+	else if (var == "TOUCHTHRESHOLD")
+	{
+		char *intStr;
+		intStr = (char *)malloc(sizeof(char) * 15);
+		touch_threshold_mutex.lock();
+
+		intStr = itoa((int)touch_threshold, intStr, 10);
+		touch_threshold_mutex.unlock();
+
+		String StringPos = String(intStr);
+		free(intStr);
+		return (StringPos);
+	}
 	else if (var == "STALIST")
 	{
 		return (get_sta_list());
@@ -878,7 +906,32 @@ void setup_server_for_ap()
 					  set_data_to_csv("ap_password", (char *)buff);
 					  free(buff);
 				  }
-
+				  if (request->hasParam("touch_refinement"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("touch_refinement")->value().toCharArray((char *)buff, 50);
+						touch_refinement_mutex.lock();
+					  
+					  touch_refinement = atoi((char *)buff);
+					touch_refinement_mutex.unlock();
+					  
+					  set_data_to_csv("touch_refinement", (char *)buff);
+					  free(buff);
+				  }
+				  if (request->hasParam("touch_threshold"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("touch_threshold")->value().toCharArray((char *)buff, 50);
+		touch_threshold_mutex.lock();
+					  
+					  touch_threshold = atoi((char *)buff);
+		touch_threshold_mutex.unlock();
+					  
+					  set_data_to_csv("touch_threshold", (char *)buff);
+					  free(buff);
+				  }
 				  request->send(SPIFFS, "/ApIndex.html", String(), false, processor);
 				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
 				  Serial.println("Client Here !");
@@ -1053,6 +1106,32 @@ void setup_server_for_sta()
 					  set_data_to_csv("ap_password", (char *)buff);
 					  free(buff);
 				  }
+				if (request->hasParam("touch_refinement"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("touch_refinement")->value().toCharArray((char *)buff, 50);
+		touch_refinement_mutex.lock();
+					  
+					  touch_refinement = atoi((char *)buff);
+		touch_refinement_mutex.unlock();
+					  
+					  set_data_to_csv("touch_refinement", (char *)buff);
+					  free(buff);
+				  }
+				  if (request->hasParam("touch_threshold"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("touch_threshold")->value().toCharArray((char *)buff, 50);
+		touch_threshold_mutex.lock();
+					  
+					  touch_threshold = atoi((char *)buff);
+		touch_threshold_mutex.unlock();
+					  
+					  set_data_to_csv("touch_threshold", (char *)buff);
+					  free(buff);
+				  }
 
 				  request->send(SPIFFS, "/StaIndex.html", String(), false, processor);
 				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
@@ -1153,6 +1232,26 @@ void setup_credentials()
 	if ((APpassword = get_data_from_csv("ap_password")) == 0)
 	{
 		APpassword = strdup("44448888");
+	}
+
+	if (tmp = get_data_from_csv("touch_refinement"))
+	{
+		touch_refinement_mutex.lock();
+
+		touch_refinement = (uint8_t)atoi(tmp);
+		touch_refinement_mutex.unlock();
+		
+		free(tmp);
+	}
+
+	if (tmp = get_data_from_csv("touch_threshold"))
+	{
+		touch_threshold_mutex.lock();
+		
+		touch_threshold = (uint8_t)atoi(tmp);
+		touch_threshold_mutex.unlock();
+		
+		free(tmp);
 	}
 
 	// Serial.printf("Sta Ssid (csv) : \'%s\'\n", get_data_from_csv("sta_ssid"));
@@ -1959,6 +2058,14 @@ void sendOscMessage(float dfa_value, t_sensors *sensors, const IPAddress ipOut, 
 	sendOscFloatMessage("/magnetometer_x", (float)sensors->mag.x, ipOut, portOut);
 	sendOscFloatMessage("/magnetometer_y", (float)sensors->mag.y, ipOut, portOut);
 	sendOscFloatMessage("/magnetometer_z", (float)sensors->mag.z, ipOut, portOut);
+
+	sendOscFloatMessage("/touch_value", (float)sensors->touch_value, ipOut, portOut);
+		touch_threshold_mutex.lock();
+	
+	sendOscFloatMessage("/touch_boolean", (float)((sensors->touch_value < touch_threshold) ? 1.0 : 0.0), ipOut, portOut);
+		touch_threshold_mutex.unlock();
+
+
 }
 
 float updateDFA(t_sensors sensors)
@@ -2212,15 +2319,16 @@ void udpInitOrca(const IPAddress ipOut, const uint32_t portOut)
 
 void	update_touch_value(t_sensors *sensors)
 {
-	uint16_t refinement_size = 5;//Valeur a avoir dans le site web
+	// uint16_t refinement_size = 5;//Valeur a avoir dans le site web
 	static uint16_t *value_history = 0;
 	static uint16_t current_index = 0;
 
+		touch_refinement_mutex.lock();
 
 	if (value_history == 0)
 	{
-		value_history = (uint16_t*)malloc(sizeof(uint16_t) * refinement_size);
-		for (uint16_t i = 0; i < refinement_size; i++)
+		value_history = (uint16_t*)malloc(sizeof(uint16_t) * touch_refinement);
+		for (uint16_t i = 0; i < touch_refinement; i++)
 		{
 			value_history[i] = 0;
 		}
@@ -2228,13 +2336,14 @@ void	update_touch_value(t_sensors *sensors)
 	value_history[current_index] = touchRead(12);
 
 	sensors->touch_value = 0;
-	for (uint16_t i = 0; i < refinement_size; i++)
+	for (uint16_t i = 0; i < touch_refinement; i++)
 	{
 		sensors->touch_value += value_history[i];
 	}
-	sensors->touch_value /= refinement_size;
+	sensors->touch_value /= touch_refinement;
 
-	current_index = current_index + 1 >= refinement_size ? 0 : current_index + 1;
+	current_index = current_index + 1 >= touch_refinement ? 0 : current_index + 1;
+		touch_refinement_mutex.unlock();
 
 
 

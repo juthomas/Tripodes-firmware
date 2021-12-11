@@ -11,3 +11,5 @@ fractal_state_pos_x,0
 fractal_state_pos_y,10
 glyph_pos_x,48
 glyph_pos_y,6
+touch_refinement,3
+touch_threshold,20
