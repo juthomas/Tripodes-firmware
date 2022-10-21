@@ -5,6 +5,19 @@
     <link rel="stylesheet" href="main.css" />
     <link rel="stylesheet" href="prism.css" />
     <script src="prism.js"></script>
+    <script>
+
+document.addEventListener("DOMContentLoaded", function (event) {
+      const inputText = document.getElementById("inputText");
+      const codeLinter = document.getElementById("codeLinter");
+      inputText.addEventListener('input', function() {
+        console.log("Value", inputText.value);
+        codeLinter.innerHTML = inputText.value;
+        Prism.highlightElement(codeLinter);
+
+      })
+    })
+    </script>
     <!-- <link rel="stylesheet" href="style.css" /> -->
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css"> -->
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/csshake/1.5.3/csshake-slow.min.css" integrity="sha512-gXyNuRltygC0lrFrvZ7YXbPS++xafArjyyDg1aC1CWysBnEBACWbQ0fEpfqTTFpikMg8826v6vTZ5bOhHSa8xg==" crossorigin="anonymous" referrerpolicy="no-referrer" /> -->
@@ -15,13 +28,9 @@
   <div style="display: flex; flex-direction: column;align-items: center;">
 
 	  <div style="display: flex;">
-		<input type="text" style="width: 300px"/>
+		<input type="text" id="inputText" style="width: 300px"/>
 		<input type="button" value="cc">
-    <code class="language-js">p { color: red }</code>
-    <textarea name="" id="" cols="30" rows="10">
-      Hello, my name is <span style="color: blue;">Bob</span>
-      and I have a friend name <span style="color: green;">Joe</span>.
-    </textarea>
+    <code class="language-js"  id="codeLinter">Bonjour</code>
     
     <!-- http://jsfiddle.net/gmc0uh2r/17/ -->
 	</div>
