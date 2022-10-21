@@ -32,7 +32,7 @@ input[type=text], input[type=number]{
 	background-color: rgb(56, 56, 56);
 }
 
-input[type=submit]{
+input[type=submit],input[type=button] {
 	padding:5px;
 	margin:3px;
 	box-shadow:none;
@@ -42,7 +42,7 @@ input[type=submit]{
 	background-color: rgb(56, 56, 56);
 }
 
-input[type=submit]:hover{
+input[type=submit]:hover, input[type=button]:hover{
 	padding:5px;
 	margin:3px;
 	box-shadow:none;

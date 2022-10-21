@@ -869,6 +869,11 @@ void setup_server_for_ap()
 				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
 				  Serial.println("Client Here !");
 			  });
+	server.on("/cmds", HTTP_GET, [](AsyncWebServerRequest *request)
+			  {
+				  request->send(SPIFFS, "/Cmds.html", String(), false, processor);
+				
+			  });
 
 	// 	server.on("/", HTTP_POST, [](AsyncWebServerRequest *request){
 
