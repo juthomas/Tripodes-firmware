@@ -43,6 +43,7 @@
         "regex": "cpp",
         "utility": "cpp",
         "typeinfo": "cpp",
-        "list": "cpp"
+        "list": "cpp",
+        "string": "cpp"
     }
 }
