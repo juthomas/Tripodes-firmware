@@ -1225,12 +1225,30 @@ void sta_setup()
 void setup()
 {
 	EEPROM.begin(EEPROM_SIZE);
+	pinMode(ADC_EN, OUTPUT);
+	digitalWrite(ADC_EN, HIGH);
+	tft.init();
+	tft.setRotation(0);
+	tft.fillScreen(TFT_BLACK);
+
+	if (TFT_BL > 0)
+	{											// TFT_BL has been set in the TFT_eSPI library in the User Setup file TTGO_T_Display.h
+		pinMode(TFT_BL, OUTPUT);				// Set backlight pin to output mode
+		digitalWrite(TFT_BL, TFT_BACKLIGHT_ON); // Turn backlight on. TFT_BACKLIGHT_ON has been set in the TFT_eSPI library in the User Setup file TTGO_T_Display.h
+	}
+
+	tft.setTextSize(1);
+	tft.setTextColor(TFT_WHITE);
+	tft.setCursor(0, 0);
+	tft.setTextDatum(MC_DATUM);
+
 	// put your setup code here, to run once:
 	current_mode = NONE_MODE;
 	Serial.begin(115200);
 	if (!SPIFFS.begin())
 	{
 		Serial.println("An Error has occurred while mounting SPIFFS");
+		tft.printf("An Error has occurred while mounting SPIFFS");
 	}
 	// WiFi.mode(WIFI_STA);
 	// WiFi.begin(ssid, password);
@@ -1246,6 +1264,7 @@ void setup()
 	if (!gyro.init())
 	{
 		Serial.println("Failed to autodetect gyro type!");
+		tft.printf("Failed to autodetect gyro type!");
 		while (1)
 			;
 	}
@@ -1266,22 +1285,8 @@ void setup()
 	timerAlarmEnable(timers[3]);
 	button_init();
 
-	pinMode(ADC_EN, OUTPUT);
-	digitalWrite(ADC_EN, HIGH);
-	tft.init();
-	tft.setRotation(0);
 	tft.fillScreen(TFT_BLACK);
-
-	if (TFT_BL > 0)
-	{											// TFT_BL has been set in the TFT_eSPI library in the User Setup file TTGO_T_Display.h
-		pinMode(TFT_BL, OUTPUT);				// Set backlight pin to output mode
-		digitalWrite(TFT_BL, TFT_BACKLIGHT_ON); // Turn backlight on. TFT_BACKLIGHT_ON has been set in the TFT_eSPI library in the User Setup file TTGO_T_Display.h
-	}
-
-	tft.setTextSize(1);
-	tft.setTextColor(TFT_WHITE);
 	tft.setCursor(0, 0);
-	tft.setTextDatum(MC_DATUM);
 
 	tft.printf("Please selected your \nmode \n(with bottom buttons)");
 	tft.setCursor(0, 230);
