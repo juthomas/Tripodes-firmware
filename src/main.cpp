@@ -8,8 +8,8 @@
 // #include <ESP32Ping.h>
 
 // #include <Adafruit_L3GD20_U.h>
-//tripod
-//perf8888
+// tripod
+// perf8888
 // const char *ssid = "tripodesAP";
 // const char *password = "44448888";
 // const char *ssid = "tripod";
@@ -35,7 +35,6 @@ int16_t fractal_state_pos_y = 10;
 int16_t glyph_pos_x = 48;
 int16_t glyph_pos_y = 6;
 
-
 L3G gyro;
 
 Adafruit_LSM303_Accel_Unified accel = Adafruit_LSM303_Accel_Unified(54321);
@@ -60,13 +59,13 @@ typedef struct s_data_task
 enum e_wifi_modes
 {
 	NONE_MODE = 0,
-	AP_MASK		= 0b00001,
-	STA_MASK	= 0b00010,
-	STD_MODE	= 0b00100,
-	SENSORS_MODE= 0b01000,
-	DFA_MODE	= 0b01100,
-	AP_MODE		= 0b10000,
-	MODE_MASK	= 0b11100,
+	AP_MASK = 0b00001,
+	STA_MASK = 0b00010,
+	STD_MODE = 0b00100,
+	SENSORS_MODE = 0b01000,
+	DFA_MODE = 0b01100,
+	AP_MODE = 0b10000,
+	MODE_MASK = 0b11100,
 };
 
 t_data_task g_data_task[3];
@@ -199,7 +198,7 @@ double fmap(double x, double in_min, double in_max, double out_min, double out_m
 	if (divisor == 0)
 	{
 		log_e("Invalid map input range, min == max");
-		return -1; //AVR returns -1, SAM returns 0
+		return -1; // AVR returns -1, SAM returns 0
 	}
 	return (delta * dividend + (divisor / 2.0)) / divisor + out_min;
 }
@@ -275,7 +274,6 @@ void IRAM_ATTR button2_handler(Button2 &btn)
 		else if (current_mode)
 		{
 			udp_sending = !udp_sending;
-
 		}
 	}
 	if (click_type == DOUBLE_CLICK)
@@ -516,7 +514,7 @@ void update_sta_list(void *params)
 		for (int i = 0; i < adapter_sta_list.num; i++)
 		{
 			tcpip_adapter_sta_info_t station = adapter_sta_list.sta[i];
-			char *ip_char = ip4addr_ntoa(&(station.ip)); //leak?
+			char *ip_char = ip4addr_ntoa(&(station.ip)); // leak?
 
 			HTTPClient http_request;
 			http_request.setConnectTimeout(5000);
@@ -539,6 +537,53 @@ void update_sta_list(void *params)
 		delay(1000);
 		// Serial.println("After");
 	}
+}
+
+namespace patch
+{
+	template <typename T>
+	std::string to_string(const T &n)
+	{
+		std::ostringstream stm;
+		stm << n;
+		return stm.str();
+	}
+}
+
+std::string get_udp_command(int16_t index)
+{
+	fs::File file = SPIFFS.open("/udpCommands.bin", "r");
+	Serial.printf("File Size : %d\n", file.size());
+	Serial.printf("Free Heap : %d\n", ESP.getFreeHeap());
+	uint8_t *buff;
+	size_t read_index = 1;
+	size_t buff_size = file.size();
+	buff = (uint8_t *)malloc(sizeof(char) * (buff_size + 1));
+	if ((read_index = file.read(buff, (buff_size))) > 0)
+	{
+		buff[read_index] = '\0';
+		Serial.printf("%s", buff);
+	}
+	else
+	{
+		Serial.printf("Error reading file\n");
+		Serial.printf("Buff : %s\n", buff);
+	}
+	if ((*(t_updCommands *)buff).number > index)
+	{
+		std::string command = patch::to_string((*(t_updCommands *)buff).commandsList[index].command);
+		free(buff);
+		file.close();
+	}
+	return ("");
+}
+
+void set_udp_command(int16_t index, std::string command)
+{
+}
+
+void remove_udp_command(int16_t index)
+{
 }
 
 char *get_value_from_csv(char *file, size_t index)
@@ -591,9 +636,9 @@ char *concatenate_csv(char *buffer, size_t beg_index, size_t end_index, char *va
 	return (new_buffer);
 }
 
-void set_data_to_csv(char *key, char *value)
+void set_data_to_csv(char *key, char *value, char *filePath = "/data.csv")
 {
-	fs::File file = SPIFFS.open("/data.csv", "r");
+	fs::File file = SPIFFS.open(filePath, "r");
 	if (!file)
 	{
 		Serial.println("Failed to open file for reading");
@@ -642,7 +687,7 @@ void set_data_to_csv(char *key, char *value)
 			Serial.print(new_buff);
 			Serial.print("End");
 			file.close();
-			file = SPIFFS.open("/data.csv", "w");
+			file = SPIFFS.open(filePath, "w");
 			file.print(new_buff);
 			file.close();
 			free(buff);
@@ -655,9 +700,9 @@ void set_data_to_csv(char *key, char *value)
 	file.close();
 }
 
-char *get_data_from_csv(char *key)
+char *get_data_from_csv(char *key, char *filePath = "/data.csv")
 {
-	fs::File file = SPIFFS.open("/data.csv");
+	fs::File file = SPIFFS.open(filePath);
 	if (!file)
 	{
 		Serial.println("Failed to open file for reading");
@@ -705,10 +750,10 @@ char *get_data_from_csv(char *key)
 	file.close();
 	return (0);
 
-	//get value from key here
+	// get value from key here
 }
 
-//create function to store value from key here
+// create function to store value from key here
 
 void setup_server_for_ap()
 {
@@ -867,13 +912,9 @@ void setup_server_for_ap()
 
 				  request->send(SPIFFS, "/ApIndex.html", String(), false, processor);
 				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
-				  Serial.println("Client Here !");
-			  });
+				  Serial.println("Client Here !"); });
 	server.on("/cmds", HTTP_GET, [](AsyncWebServerRequest *request)
-			  {
-				  request->send(SPIFFS, "/Cmds.html", String(), false, processor);
-				
-			  });
+			  { request->send(SPIFFS, "/Cmds.html", String(), false, processor); });
 
 	// 	server.on("/", HTTP_POST, [](AsyncWebServerRequest *request){
 
@@ -1047,8 +1088,7 @@ void setup_server_for_sta()
 
 				  request->send(SPIFFS, "/StaIndex.html", String(), false, processor);
 				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
-				  Serial.println("Client Here !");
-			  });
+				  Serial.println("Client Here !"); });
 	server.begin();
 }
 
@@ -1152,7 +1192,7 @@ void setup_credentials()
 	// Serial.printf("Ap Password (csv) : \'%s\'\n", get_data_from_csv("ap_password"));
 }
 
-//Setup Motors, Udp here
+// Setup Motors, Udp here
 void ap_setup()
 {
 	WiFi.mode(WIFI_AP);
@@ -1170,9 +1210,6 @@ void ap_setup()
 	ledcAttachPin(MOTOR_3, motorChannel3);
 	Udp.begin(localUdpPort);
 
-
-
-
 	xTaskCreatePinnedToCore(update_sta_list, "update_sta_list", 10000, NULL, 1, &Task1, 1);
 }
 
@@ -1186,8 +1223,8 @@ void sta_setup()
 
 	WiFi.mode(WIFI_STA);
 
-	//Static ip attributon
-	// WiFi.config(local_IP, gateway, subnet);
+	// Static ip attributon
+	//  WiFi.config(local_IP, gateway, subnet);
 
 	WiFi.begin(ssid, password);
 	tft.drawString("Connecting", tft.width() / 2, tft.height() / 2);
@@ -1362,7 +1399,7 @@ void drawMotorsActivity2()
 	drawing_sprite.printf("%llds\n", esp_timer_get_time() / 1000000);
 	drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
 
-	//uint32_t color1 = TFT_BLUE;
+	// uint32_t color1 = TFT_BLUE;
 	uint32_t color2 = TFT_WHITE;
 	drawing_sprite.drawCircle(67, 120, 26, color2);
 	drawing_sprite.drawCircle(27, 190, 26, color2);
@@ -1374,7 +1411,7 @@ void drawMotorsActivity2()
 	drawing_sprite.drawLine(100, 215, 67, 195, color2);
 	drawing_sprite.drawLine(67, 195, 35, 215, color2);
 
-	//drawing_sprite.drawCircle(TFT_WIDTH / 2, TFT_HEIGHT/4 * i + TFT_HEIGHT/4 , 20, TFT_BLUE);
+	// drawing_sprite.drawCircle(TFT_WIDTH / 2, TFT_HEIGHT/4 * i + TFT_HEIGHT/4 , 20, TFT_BLUE);
 	if (pwmValues[0])
 	{
 		drawing_sprite.fillCircle(67, 120, pwmValues[0] / 11, TFT_BLUE);
@@ -1392,7 +1429,7 @@ void drawMotorsActivity2()
 	drawing_sprite.deleteSprite();
 }
 
-//create sta list instant
+// create sta list instant
 
 void drawNetworkActivity(bool is_udp_sending, bool is_osc_sending)
 {
@@ -1568,7 +1605,7 @@ void look_for_udp_message()
 
 		if (convertedPacket.indexOf("P") > -1 && convertedPacket.indexOf("D") > -1 && convertedPacket.indexOf("I") > -1)
 		{
-			//t_data_task dataTask;
+			// t_data_task dataTask;
 
 			int duration = convertedPacket.substring(convertedPacket.indexOf("D") + 1).toInt();
 			int intensity = convertedPacket.substring(convertedPacket.indexOf("I") + 1).toInt();
@@ -1671,7 +1708,7 @@ char convertBase35ToChar(int nb)
 
 void sendUdpFractalState(float alpha, const IPAddress ipOut, const uint32_t portOut)
 {
-	//VABCD
+	// VABCD
 	char letter = ' ';
 	if (alpha <= 0.6)
 		letter = 'A';
@@ -1927,13 +1964,9 @@ void update_sensors(t_sensors *sensors)
 	sensors->mag.y = mag_event.magnetic.y;
 	sensors->mag.z = mag_event.magnetic.z;
 
-
 	// Serial.printf("Acc  : %02f | %02f | %02f\n", sensors->accel.x, sensors->accel.y, sensors->accel.z);
 	// Serial.printf("Gyro : %02f | %02f | %02f\n", sensors->gyro.x, sensors->gyro.y, sensors->gyro.z);
 	// Serial.printf("Mag  : %02f | %02f | %02f\n", sensors->mag.x, sensors->mag.y, sensors->mag.z);
-
-
-
 }
 
 void sendOscMessage(float dfa_value, t_sensors *sensors, const IPAddress ipOut, const uint32_t portOut)
@@ -2267,7 +2300,7 @@ void loop()
 			// web();
 		}
 	}
-	//Serial.println(".");
+	// Serial.println(".");
 	delay(25);
 	// delay(500);
 	// put your main code here, to run repeatedly:

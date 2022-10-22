@@ -26,16 +26,22 @@ typedef struct s_sensors_equivalence
 } t_sensors_equivalence;
 
 static const t_sensors_equivalence sensors_values[] = {
-    (t_sensors_equivalence){.sensor_name = "gyro_x", .sensor_offset = offsetof(t_sensors, gyro_x)},
-    (t_sensors_equivalence){.sensor_name = "gyro_y", .sensor_offset = offsetof(t_sensors, gyro_y)},
-    (t_sensors_equivalence){.sensor_name = "gyro_z", .sensor_offset = offsetof(t_sensors, gyro_z)},
-    (t_sensors_equivalence){.sensor_name = "accel_x", .sensor_offset = offsetof(t_sensors, accel_x)},
-    (t_sensors_equivalence){.sensor_name = "accel_y", .sensor_offset = offsetof(t_sensors, accel_y)},
-    (t_sensors_equivalence){.sensor_name = "accel_z", .sensor_offset = offsetof(t_sensors, accel_z)},
-    (t_sensors_equivalence){.sensor_name = "mag_x", .sensor_offset = offsetof(t_sensors, mag_x)},
-    (t_sensors_equivalence){.sensor_name = "mag_y", .sensor_offset = offsetof(t_sensors, mag_y)},
-    (t_sensors_equivalence){.sensor_name = "mag_z", .sensor_offset = offsetof(t_sensors, mag_z)},
-    (t_sensors_equivalence){.sensor_name = "dfa", .sensor_offset = offsetof(t_sensors, dfa)},
+    (t_sensors_equivalence){.sensor_offset = offsetof(t_sensors, gyro_x), .sensor_name = "gyro_x"},
+    (t_sensors_equivalence){.sensor_offset = offsetof(t_sensors, gyro_y), .sensor_name = "gyro_y"},
+    (t_sensors_equivalence){.sensor_offset = offsetof(t_sensors, gyro_z), .sensor_name = "gyro_z"},
+    (t_sensors_equivalence){.sensor_offset = offsetof(t_sensors, accel_x), .sensor_name = "accel_x"},
+    (t_sensors_equivalence){.sensor_offset = offsetof(t_sensors, accel_y), .sensor_name = "accel_y"},
+    (t_sensors_equivalence){.sensor_offset = offsetof(t_sensors, accel_z), .sensor_name = "accel_z"},
+    (t_sensors_equivalence){.sensor_offset = offsetof(t_sensors, mag_x), .sensor_name = "mag_x"},
+    (t_sensors_equivalence){.sensor_offset = offsetof(t_sensors, mag_y), .sensor_name = "mag_y"},
+    (t_sensors_equivalence){
+        .sensor_offset = offsetof(t_sensors, mag_z),
+        .sensor_name = "mag_z",
+    },
+    (t_sensors_equivalence){
+        .sensor_offset = offsetof(t_sensors, dfa),
+        .sensor_name = "dfa",
+    },
 };
 
 int count_number_characters(char *str)
@@ -62,7 +68,7 @@ std::string calculate(std::string str)
     {
         // std::cout << "calculate T:" << total_number << "\n";
         std::cout << "calculate A:" << count_number_characters(&char_array[index]) << "\n";
-        
+
         index += count_number_characters(&char_array[index]);
 
         std::cout << "calculate T:" << total_number << "," << &char_array[index] << "\n";
@@ -93,7 +99,6 @@ std::string calculate(std::string str)
         }
         else
             index++;
-        
     }
 
     int number = atoi(str.c_str());
