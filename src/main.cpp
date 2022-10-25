@@ -553,6 +553,11 @@ namespace patch
 std::string get_udp_command(int16_t index)
 {
 	fs::File file = SPIFFS.open("/udpCommands.bin", "r");
+	if (!file)
+	{
+		Serial.println("Failed to open file for reading");
+		return ("");
+	}
 	Serial.printf("File Size : %d\n", file.size());
 	Serial.printf("Free Heap : %d\n", ESP.getFreeHeap());
 	uint8_t *buff;
@@ -574,16 +579,89 @@ std::string get_udp_command(int16_t index)
 		std::string command = patch::to_string((*(t_updCommands *)buff).commandsList[index].command);
 		free(buff);
 		file.close();
+		return (command);
 	}
+	free(buff);
+	file.close();
 	return ("");
 }
 
-void set_udp_command(int16_t index, std::string command)
+bool set_udp_command(int16_t index, std::string command)
 {
+	fs::File file = SPIFFS.open("/udpCommands.bin", "r");
+	if (!file)
+	{
+		Serial.println("Failed to open file for reading");
+		return (false);
+	}
+	Serial.printf("File Size : %d\n", file.size());
+	Serial.printf("Free Heap : %d\n", ESP.getFreeHeap());
+	uint8_t *buff;
+	size_t read_index = 1;
+	size_t buff_size = file.size();
+	buff = (uint8_t *)malloc(sizeof(char) * (buff_size + 1));
+	if ((read_index = file.read(buff, (buff_size))) > 0)
+	{
+		buff[read_index] = '\0';
+		Serial.printf("%s", buff);
+	}
+	else
+	{
+		Serial.printf("Error reading file\n");
+		Serial.printf("Buff : %s\n", buff);
+	}
+	if ((*(t_updCommands *)buff).number >= index)
+	{
+		file.close();
+		file = SPIFFS.open("/udpCommands.bin", "w");
+		strcpy((*(t_updCommands *)buff).commandsList[index].command, command.c_str());
+		file.print((char *)buff);
+		file.close();
+		free(buff);
+		return (true);
+	}
+	file.close();
+	free(buff);
+	return (false);
 }
 
-void remove_udp_command(int16_t index)
+bool remove_udp_command(int16_t index)
 {
+	fs::File file = SPIFFS.open("/udpCommands.bin", "r");
+	if (!file)
+	{
+		Serial.println("Failed to open file for reading");
+		return (false);
+	}
+	Serial.printf("File Size : %d\n", file.size());
+	Serial.printf("Free Heap : %d\n", ESP.getFreeHeap());
+	uint8_t *buff;
+	size_t read_index = 1;
+	size_t buff_size = file.size();
+	buff = (uint8_t *)malloc(sizeof(char) * (buff_size + 1));
+	if ((read_index = file.read(buff, (buff_size))) > 0)
+	{
+		buff[read_index] = '\0';
+		Serial.printf("%s", buff);
+	}
+	else
+	{
+		Serial.printf("Error reading file\n");
+		Serial.printf("Buff : %s\n", buff);
+	}
+	if ((*(t_updCommands *)buff).number == index + 1)
+	{
+		file.close();
+		file = SPIFFS.open("/udpCommands.bin", "w");
+		(*(t_updCommands *)buff).number -= 1;
+		file.print((char *)buff);
+		file.close();
+		free(buff);
+		return (true);
+	}
+	file.close();
+	free(buff);
+	return (false);
 }
 
 char *get_value_from_csv(char *file, size_t index)
@@ -912,7 +990,8 @@ void setup_server_for_ap()
 
 				  request->send(SPIFFS, "/ApIndex.html", String(), false, processor);
 				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
-				  Serial.println("Client Here !"); });
+				  Serial.println("Client Here !");
+			  });
 	server.on("/cmds", HTTP_GET, [](AsyncWebServerRequest *request)
 			  { request->send(SPIFFS, "/Cmds.html", String(), false, processor); });
 
@@ -1088,7 +1167,8 @@ void setup_server_for_sta()
 
 				  request->send(SPIFFS, "/StaIndex.html", String(), false, processor);
 				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
-				  Serial.println("Client Here !"); });
+				  Serial.println("Client Here !");
+			  });
 	server.begin();
 }
 
