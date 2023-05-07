@@ -41,7 +41,7 @@ L3G gyro;
 Adafruit_LSM303_Accel_Unified accel = Adafruit_LSM303_Accel_Unified(54321);
 Adafruit_LSM303DLH_Mag_Unified mag = Adafruit_LSM303DLH_Mag_Unified(12345);
 // Adafruit_L3GD20_Unified gyro = Adafruit_L3GD20_Unified(20);
-const int motorFreq = 5000;
+const int motorFreq = 50;
 const int motorResolution = 8;
 const int motorChannel1 = 0;
 const int motorChannel2 = 1;
@@ -1569,11 +1569,11 @@ void look_for_udp_message()
 			int intensity = convertedPacket.substring(convertedPacket.indexOf("I") + 1).toInt();
 			int pin = convertedPacket.substring(convertedPacket.indexOf("P") + 1).toInt();
 
-			if (pin <= 3 && pin >= 0)
+			if (pin <= 2 && pin >= 0)
 			{
 				timers_end[pin] = esp_timer_get_time() / 1000 + duration;
-				g_set_pwm[pin](intensity);
-				pwmValues[pin] = intensity;
+				g_set_pwm[pin](intensity / 5);
+				pwmValues[pin] = intensity / 5;
 			}
 		}
 	}

@@ -146,16 +146,16 @@ void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort
 	//drawing_sprite.drawCircle(TFT_WIDTH / 2, TFT_HEIGHT/4 * i + TFT_HEIGHT/4 , 20, TFT_BLUE);
 	if (pwmValues[0])
 	{
-		drawing_sprite.fillCircle(67, 120, pwmValues[0] / 11, TFT_BLUE);
+		drawing_sprite.fillCircle(67, 120, pwmValues[0] / 2, TFT_BLUE);
 		// Serial.printf("Seconds lefts : %lf\n", timerAlarmReadSeconds(timers[0]));
 	}
 	if (pwmValues[1])
 	{
-		drawing_sprite.fillCircle(27, 190, pwmValues[1] / 11, TFT_BLUE);
+		drawing_sprite.fillCircle(27, 190, pwmValues[1] / 2, TFT_BLUE);
 	}
 	if (pwmValues[2])
 	{
-		drawing_sprite.fillCircle(108, 190, pwmValues[2] / 11, TFT_BLUE);
+		drawing_sprite.fillCircle(108, 190, pwmValues[2] / 2, TFT_BLUE);
 	}
 	drawUpdSendingActivity(&drawing_sprite, is_upd_sending, is_osc_sending);
 	drawing_sprite.pushSprite(0, 0);
