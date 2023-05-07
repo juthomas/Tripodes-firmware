@@ -4,8 +4,9 @@
 #include <string>
 #include <HTTPClient.h>
 #include <list>
-#include <mutex>
 // #include <ESP32Ping.h>
+
+
 
 // #include <Adafruit_L3GD20_U.h>
 //tripod
@@ -22,19 +23,24 @@
 
 TaskHandle_t Task1;
 
+TaskHandle_t AudioTask;
+
+
 std::mutex sta_list_mutex;
 
 char *ssid;
 char *password;
 char *APssid;
 char *APpassword;
-
+char *audioHost;
 char *tripode_id;
+int16_t audioVolume = 21;
 int16_t fractal_state_pos_x = 0;
 int16_t fractal_state_pos_y = 10;
 int16_t glyph_pos_x = 48;
 int16_t glyph_pos_y = 6;
 
+Audio audio;
 
 L3G gyro;
 
@@ -84,6 +90,7 @@ uint8_t current_mode = 0;
 
 bool udp_sending = false;
 bool osc_sending = false;
+bool i2s_on = false;
 
 // const char* ssid = "Freebox-0E3EAE";
 // const char* password =  "taigaest1chien";
@@ -147,6 +154,43 @@ hw_timer_t *timers[4] = {NULL, NULL, NULL, NULL};
 
 std::list<s_sta_list> sta_list;
 
+
+// optional
+
+// void audio_info(const char *info){
+//     Serial.print("info        "); Serial.println(info);
+// }
+// void audio_id3data(const char *info){  //id3 metadata
+//     Serial.print("id3data     ");Serial.println(info);
+// }
+// void audio_eof_mp3(const char *info){  //end of file
+//     Serial.print("eof_mp3     ");Serial.println(info);
+// }
+// void audio_showstation(const char *info){
+//     Serial.print("station     ");Serial.println(info);
+// }
+// void audio_showstreaminfo(const char *info){
+//     Serial.print("streaminfo  ");Serial.println(info);
+// }
+// void audio_showstreamtitle(const char *info){
+//     Serial.print("streamtitle ");Serial.println(info);
+// }
+// void audio_bitrate(const char *info){
+//     Serial.print("bitrate     ");Serial.println(info);
+// }
+// void audio_commercial(const char *info){  //duration in sec
+//     Serial.print("commercial  ");Serial.println(info);
+// }
+// void audio_icyurl(const char *info){  //homepage
+//     Serial.print("icyurl      ");Serial.println(info);
+// }
+// void audio_lasthost(const char *info){  //stream URL played
+//     Serial.print("lasthost    ");Serial.println(info);
+// }
+// void audio_eof_speech(const char *info){
+//     Serial.print("eof_speech  ");Serial.println(info);
+// }
+
 const char *wl_status_to_string(int ah)
 {
 	switch (ah)
@@ -189,6 +233,43 @@ const char *eTaskGetState_to_string(int ah)
 	default:
 		return "ERROR NOT STATE";
 	}
+}
+
+void IRAM_ATTR audio_loop(void *params)
+{
+	for (;;)
+	{
+		if (i2s_on)
+		{
+			audio.loop();
+		}
+		else
+		{
+			delay(200);
+		}
+	}
+}
+
+void setup_bone_conducer()
+{
+	audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
+	audio.setVolume(audioVolume); // 0...21
+	// audio.connecttohost("http://icecast.radiofrance.fr/francemusique-hifi.aac"); //  128k mp3
+	audio.connecttohost(audioHost); //  128k mp3
+	// timers[2] = timerBegin(0, 80, true);
+	// timerAttachInterrupt(timers[2], &audio_loop, false);
+	// timerAlarmWrite(timers[2], 50 * 1000, true);
+	// timerAlarmEnable(timers[2]);
+
+	xTaskCreatePinnedToCore(
+		audio_loop, /* Function to implement the task */
+		"audio", /* Name of the task */
+		10000,  /* Stack size in words */
+		NULL,  /* Task input parameter */
+		1,  /* Priority of the task */
+		&AudioTask,  /* Task handle. */
+		1);
+
 }
 
 double fmap(double x, double in_min, double in_max, double out_min, double out_max)
@@ -282,6 +363,10 @@ void IRAM_ATTR button2_handler(Button2 &btn)
 	{
 		osc_sending = !osc_sending;
 	}
+	if (click_type == TRIPLE_CLICK)
+	{
+		i2s_on = !i2s_on;
+	}
 }
 
 void button_init()
@@ -300,6 +385,8 @@ void IRAM_ATTR button_loop()
 {
 	btn1.loop();
 	btn2.loop();
+
+
 }
 
 void IRAM_ATTR call_buttons(void)
@@ -453,6 +540,20 @@ String processor(const String &var)
 	else if (var == "STALIST")
 	{
 		return (get_sta_list());
+	}
+	else if (var == "AUDIOHOST")
+	{
+		String string_audioHost = String(audioHost);
+		return (string_audioHost);
+	}
+		else if (var == "AUDIOVOLUME")
+	{
+		char *intStr;
+		intStr = (char *)malloc(sizeof(char) * 15);
+		intStr = itoa(audioVolume, intStr, 10);
+		String StringVol = String(intStr);
+		free(intStr);
+		return (StringVol);
 	}
 	return String();
 }
@@ -864,7 +965,32 @@ void setup_server_for_ap()
 					  set_data_to_csv("ap_password", (char *)buff);
 					  free(buff);
 				  }
+				  if (request->hasParam("audio_host"))
+				  {
+					  					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 250);
+					  request->getParam("audio_host")->value().toCharArray((char *)buff, 250);
+					  if (audioHost)
+					  {
+						  free(audioHost);
+					  }
+					  audioHost = strdup((char *)buff);
+					  set_data_to_csv("audio_host", (char *)buff);
+					  free(buff);
+					// audio.connecttohost(audioHost); //  128k mp3
 
+				  }
+				  if (request->hasParam("audio_volume"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("audio_volume")->value().toCharArray((char *)buff, 50);
+					  audioVolume = atoi((char *)buff);
+					  set_data_to_csv("audio_volume", (char *)buff);
+					  free(buff);
+						// audio.setVolume(audioVolume); // 0...21
+					  
+				  }
 				  request->send(SPIFFS, "/ApIndex.html", String(), false, processor);
 				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
 				  Serial.println("Client Here !");
@@ -1039,6 +1165,32 @@ void setup_server_for_sta()
 					  set_data_to_csv("ap_password", (char *)buff);
 					  free(buff);
 				  }
+				  if (request->hasParam("audio_host"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 250);
+					  request->getParam("audio_host")->value().toCharArray((char *)buff, 250);
+					  if (audioHost)
+					  {
+						  free(audioHost);
+					  }
+					  audioHost = strdup((char *)buff);
+					  set_data_to_csv("audio_host", (char *)buff);
+					  free(buff);
+	// audio.connecttohost(audioHost); //  128k mp3
+
+				  }
+				  if (request->hasParam("audio_volume"))
+				  {
+					  uint8_t *buff;
+					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+					  request->getParam("audio_volume")->value().toCharArray((char *)buff, 50);
+					  audioVolume = atoi((char *)buff);
+					  set_data_to_csv("audio_volume", (char *)buff);
+					  free(buff);
+	// audio.setVolume(audioVolume); // 0...21
+				  }
+
 
 				  request->send(SPIFFS, "/StaIndex.html", String(), false, processor);
 				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
@@ -1141,6 +1293,17 @@ void setup_credentials()
 		APpassword = strdup("44448888");
 	}
 
+	if ((audioHost = get_data_from_csv("audio_host")) == 0)
+	{
+		audioHost = strdup("http://icecast.radiofrance.fr/francemusique-hifi.aac");
+	}
+
+	if (tmp = get_data_from_csv("audio_volume"))
+	{
+		audioVolume = atoi(tmp);
+		free(tmp);
+	}
+
 	// Serial.printf("Sta Ssid (csv) : \'%s\'\n", get_data_from_csv("sta_ssid"));
 	// Serial.printf("Sta Password (csv) : \'%s\'\n", get_data_from_csv("sta_password"));
 	// Serial.printf("Ap Ssid (csv) : \'%s\'\n", get_data_from_csv("ap_ssid"));
@@ -1164,7 +1327,7 @@ void ap_setup()
 	ledcAttachPin(MOTOR_2, motorChannel2);
 	ledcAttachPin(MOTOR_3, motorChannel3);
 	Udp.begin(localUdpPort);
-
+	setup_bone_conducer();
 
 
 
@@ -1215,6 +1378,10 @@ void sta_setup()
 	setup_server_for_sta();
 	Udp.begin(localUdpPort);
 	Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
+	Serial.println("Setting up audio flux");
+	setup_bone_conducer();
+	Serial.println("Audio flux Ok");
+
 }
 
 void setup()
@@ -1918,6 +2085,12 @@ void update_sensors(t_sensors *sensors)
 	sensors->gyro.x = gyro.g.x;
 	sensors->gyro.y = gyro.g.y;
 	sensors->gyro.z = gyro.g.z;
+
+
+	// sensors->gyro.x =42;
+	// sensors->gyro.y = 42;
+	// sensors->gyro.z = 42;
+
 	sensors->mag.x = mag_event.magnetic.x;
 	sensors->mag.y = mag_event.magnetic.y;
 	sensors->mag.z = mag_event.magnetic.z;
@@ -2206,7 +2379,9 @@ void loop()
 	// if (current_mode & NORM_MASK)
 	if (1)
 	{
+
 		look_for_udp_message();
+
 		for (int i = 0; i < 3; i++)
 		{
 			if (timers_end[i] != 0 && timers_end[i] < esp_timer_get_time() / 1000)
@@ -2216,7 +2391,12 @@ void loop()
 				pwmValues[i] = 0;
 			}
 		}
-		update_sensors(&sensors);
+
+		if (!i2s_on)
+		{
+			update_sensors(&sensors);
+		}
+		
 		float dfa_value = updateDFA(sensors);
 		// const IPAddress usine_ip(192,168,100,100);
 		// const unsigned int usine_port = 2002;          // remote port to receive OSC
@@ -2246,7 +2426,9 @@ void loop()
 
 		if ((current_mode & MODE_MASK) == STD_MODE)
 		{
+
 			drawMotorsActivity(tft, pwmValues, localUdpPort, ssid, udp_sending, osc_sending);
+		
 		}
 		else if ((current_mode & MODE_MASK) == SENSORS_MODE)
 		{
@@ -2262,7 +2444,7 @@ void loop()
 			// web();
 		}
 	}
-	//Serial.println(".");
+	Serial.println(".");
 	delay(25);
 	// delay(500);
 	// put your main code here, to run repeatedly:
