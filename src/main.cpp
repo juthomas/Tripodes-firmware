@@ -29,7 +29,7 @@ char *ssid;
 char *password;
 char *APssid;
 char *APpassword;
-char *audioHost;
+// char *audioHost;
 char *tripode_id;
 int16_t audioVolume = 21;
 int16_t fractal_state_pos_x = 0;
@@ -62,14 +62,16 @@ typedef struct s_data_task
 
 enum e_wifi_modes
 {
-	NONE_MODE = 0,
-	AP_MASK = 0b00001,
-	STA_MASK = 0b00010,
-	STD_MODE = 0b00100,
+	NONE_MODE    = 0,
+	AP_MASK      = 0b00001,
+	STA_MASK     = 0b00010,
+
+	STD_MODE     = 0b00100,
 	SENSORS_MODE = 0b01000,
-	DFA_MODE = 0b01100,
-	AP_MODE = 0b10000,
-	MODE_MASK = 0b11100,
+	DFA_MODE     = 0b01100,
+	AP_MODE      = 0b10000,
+	// RUNE_MODE    = 0b10100,
+	MODE_MASK    = 0b11100,
 };
 
 t_data_task g_data_task[3];
@@ -461,20 +463,20 @@ String processor(const String &var)
 	{
 		return (get_sta_list());
 	}
-	else if (var == "AUDIOHOST")
-	{
-		String string_audioHost = String(audioHost);
-		return (string_audioHost);
-	}
-	else if (var == "AUDIOVOLUME")
-	{
-		char *intStr;
-		intStr = (char *)malloc(sizeof(char) * 15);
-		intStr = itoa(audioVolume, intStr, 10);
-		String StringVol = String(intStr);
-		free(intStr);
-		return (StringVol);
-	}
+	// else if (var == "AUDIOHOST")
+	// {
+	// 	String string_audioHost = String(audioHost);
+	// 	return (string_audioHost);
+	// }
+	// else if (var == "AUDIOVOLUME")
+	// {
+	// 	char *intStr;
+	// 	intStr = (char *)malloc(sizeof(char) * 15);
+	// 	intStr = itoa(audioVolume, intStr, 10);
+	// 	String StringVol = String(intStr);
+	// 	free(intStr);
+	// 	return (StringVol);
+	// }
 	return String();
 }
 
@@ -871,32 +873,32 @@ void setup_server_for_ap()
 					  set_data_to_csv("ap_password", (char *)buff);
 					  free(buff);
 				  }
-				  if (request->hasParam("audio_host"))
-				  {
-					  					  uint8_t *buff;
-					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 250);
-					  request->getParam("audio_host")->value().toCharArray((char *)buff, 250);
-					  if (audioHost)
-					  {
-						  free(audioHost);
-					  }
-					  audioHost = strdup((char *)buff);
-					  set_data_to_csv("audio_host", (char *)buff);
-					  free(buff);
-					// audio.connecttohost(audioHost); //  128k mp3
+				//   if (request->hasParam("audio_host"))
+				//   {
+				// 	  					  uint8_t *buff;
+				// 	  buff = (uint8_t *)malloc(sizeof(uint8_t) * 250);
+				// 	  request->getParam("audio_host")->value().toCharArray((char *)buff, 250);
+				// 	  if (audioHost)
+				// 	  {
+				// 		  free(audioHost);
+				// 	  }
+				// 	  audioHost = strdup((char *)buff);
+				// 	  set_data_to_csv("audio_host", (char *)buff);
+				// 	  free(buff);
+				// 	// audio.connecttohost(audioHost); //  128k mp3
 
-				  }
-				  if (request->hasParam("audio_volume"))
-				  {
-					  uint8_t *buff;
-					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
-					  request->getParam("audio_volume")->value().toCharArray((char *)buff, 50);
-					  audioVolume = atoi((char *)buff);
-					  set_data_to_csv("audio_volume", (char *)buff);
-					  free(buff);
-						// audio.setVolume(audioVolume); // 0...21
+				//   }
+				//   if (request->hasParam("audio_volume"))
+				//   {
+				// 	  uint8_t *buff;
+				// 	  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+				// 	  request->getParam("audio_volume")->value().toCharArray((char *)buff, 50);
+				// 	  audioVolume = atoi((char *)buff);
+				// 	  set_data_to_csv("audio_volume", (char *)buff);
+				// 	  free(buff);
+				// 		// audio.setVolume(audioVolume); // 0...21
 					  
-				  }
+				//   }
 				  request->send(SPIFFS, "/ApIndex.html", String(), false, processor);
 				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
 				  Serial.println("Client Here !"); });
@@ -1070,31 +1072,31 @@ void setup_server_for_sta()
 					  set_data_to_csv("ap_password", (char *)buff);
 					  free(buff);
 				  }
-				  if (request->hasParam("audio_host"))
-				  {
-					  uint8_t *buff;
-					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 250);
-					  request->getParam("audio_host")->value().toCharArray((char *)buff, 250);
-					  if (audioHost)
-					  {
-						  free(audioHost);
-					  }
-					  audioHost = strdup((char *)buff);
-					  set_data_to_csv("audio_host", (char *)buff);
-					  free(buff);
-	// audio.connecttohost(audioHost); //  128k mp3
+	// 			  if (request->hasParam("audio_host"))
+	// 			  {
+	// 				  uint8_t *buff;
+	// 				  buff = (uint8_t *)malloc(sizeof(uint8_t) * 250);
+	// 				  request->getParam("audio_host")->value().toCharArray((char *)buff, 250);
+	// 				  if (audioHost)
+	// 				  {
+	// 					  free(audioHost);
+	// 				  }
+	// 				  audioHost = strdup((char *)buff);
+	// 				  set_data_to_csv("audio_host", (char *)buff);
+	// 				  free(buff);
+	// // audio.connecttohost(audioHost); //  128k mp3
 
-				  }
-				  if (request->hasParam("audio_volume"))
-				  {
-					  uint8_t *buff;
-					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
-					  request->getParam("audio_volume")->value().toCharArray((char *)buff, 50);
-					  audioVolume = atoi((char *)buff);
-					  set_data_to_csv("audio_volume", (char *)buff);
-					  free(buff);
-	// audio.setVolume(audioVolume); // 0...21
-				  }
+	// 			  }
+	// 			  if (request->hasParam("audio_volume"))
+	// 			  {
+	// 				  uint8_t *buff;
+	// 				  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
+	// 				  request->getParam("audio_volume")->value().toCharArray((char *)buff, 50);
+	// 				  audioVolume = atoi((char *)buff);
+	// 				  set_data_to_csv("audio_volume", (char *)buff);
+	// 				  free(buff);
+	// // audio.setVolume(audioVolume); // 0...21
+	// 			  }
 
 
 				  request->send(SPIFFS, "/StaIndex.html", String(), false, processor);
@@ -1197,16 +1199,16 @@ void setup_credentials()
 		APpassword = strdup("44448888");
 	}
 
-	if ((audioHost = get_data_from_csv("audio_host")) == 0)
-	{
-		audioHost = strdup("http://icecast.radiofrance.fr/francemusique-hifi.aac");
-	}
+	// if ((audioHost = get_data_from_csv("audio_host")) == 0)
+	// {
+	// 	audioHost = strdup("http://icecast.radiofrance.fr/francemusique-hifi.aac");
+	// }
 
-	if (tmp = get_data_from_csv("audio_volume"))
-	{
-		audioVolume = atoi(tmp);
-		free(tmp);
-	}
+	// if (tmp = get_data_from_csv("audio_volume"))
+	// {
+	// 	audioVolume = atoi(tmp);
+	// 	free(tmp);
+	// }
 
 	// Serial.printf("Sta Ssid (csv) : \'%s\'\n", get_data_from_csv("sta_ssid"));
 	// Serial.printf("Sta Password (csv) : \'%s\'\n", get_data_from_csv("sta_password"));
