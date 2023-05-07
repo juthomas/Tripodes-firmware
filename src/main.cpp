@@ -6,11 +6,9 @@
 #include <list>
 // #include <ESP32Ping.h>
 
-
-
 // #include <Adafruit_L3GD20_U.h>
-//tripod
-//perf8888
+// tripod
+// perf8888
 // const char *ssid = "tripodesAP";
 // const char *password = "44448888";
 // const char *ssid = "tripod";
@@ -24,7 +22,6 @@
 TaskHandle_t Task1;
 
 TaskHandle_t AudioTask;
-
 
 std::mutex sta_list_mutex;
 
@@ -40,7 +37,7 @@ int16_t fractal_state_pos_y = 10;
 int16_t glyph_pos_x = 48;
 int16_t glyph_pos_y = 6;
 
-Audio audio;
+// Audio audio;
 
 L3G gyro;
 
@@ -66,13 +63,13 @@ typedef struct s_data_task
 enum e_wifi_modes
 {
 	NONE_MODE = 0,
-	AP_MASK		= 0b00001,
-	STA_MASK	= 0b00010,
-	STD_MODE	= 0b00100,
-	SENSORS_MODE= 0b01000,
-	DFA_MODE	= 0b01100,
-	AP_MODE		= 0b10000,
-	MODE_MASK	= 0b11100,
+	AP_MASK = 0b00001,
+	STA_MASK = 0b00010,
+	STD_MODE = 0b00100,
+	SENSORS_MODE = 0b01000,
+	DFA_MODE = 0b01100,
+	AP_MODE = 0b10000,
+	MODE_MASK = 0b11100,
 };
 
 t_data_task g_data_task[3];
@@ -119,11 +116,11 @@ char incomingPacket[255];
 String convertedPacket;
 char replyPacket[] = "Message received";
 
-void set_pwm0(int pwm);
-void set_pwm1(int pwm);
-void set_pwm2(int pwm);
+void set_pwm0(int pwm, int tonality);
+void set_pwm1(int pwm, int tonality);
+void set_pwm2(int pwm, int tonality);
 
-typedef void (*t_set_pwm)(int pwm);
+typedef void (*t_set_pwm)(int pwm, int tonality);
 
 #define TASK_NUMBER 3
 static const t_set_pwm g_set_pwm[TASK_NUMBER] = {
@@ -153,43 +150,6 @@ int timerPansements[3];
 hw_timer_t *timers[4] = {NULL, NULL, NULL, NULL};
 
 std::list<s_sta_list> sta_list;
-
-
-// optional
-
-// void audio_info(const char *info){
-//     Serial.print("info        "); Serial.println(info);
-// }
-// void audio_id3data(const char *info){  //id3 metadata
-//     Serial.print("id3data     ");Serial.println(info);
-// }
-// void audio_eof_mp3(const char *info){  //end of file
-//     Serial.print("eof_mp3     ");Serial.println(info);
-// }
-// void audio_showstation(const char *info){
-//     Serial.print("station     ");Serial.println(info);
-// }
-// void audio_showstreaminfo(const char *info){
-//     Serial.print("streaminfo  ");Serial.println(info);
-// }
-// void audio_showstreamtitle(const char *info){
-//     Serial.print("streamtitle ");Serial.println(info);
-// }
-// void audio_bitrate(const char *info){
-//     Serial.print("bitrate     ");Serial.println(info);
-// }
-// void audio_commercial(const char *info){  //duration in sec
-//     Serial.print("commercial  ");Serial.println(info);
-// }
-// void audio_icyurl(const char *info){  //homepage
-//     Serial.print("icyurl      ");Serial.println(info);
-// }
-// void audio_lasthost(const char *info){  //stream URL played
-//     Serial.print("lasthost    ");Serial.println(info);
-// }
-// void audio_eof_speech(const char *info){
-//     Serial.print("eof_speech  ");Serial.println(info);
-// }
 
 const char *wl_status_to_string(int ah)
 {
@@ -235,43 +195,6 @@ const char *eTaskGetState_to_string(int ah)
 	}
 }
 
-void IRAM_ATTR audio_loop(void *params)
-{
-	for (;;)
-	{
-		if (i2s_on)
-		{
-			audio.loop();
-		}
-		else
-		{
-			delay(200);
-		}
-	}
-}
-
-void setup_bone_conducer()
-{
-	audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
-	audio.setVolume(audioVolume); // 0...21
-	// audio.connecttohost("http://icecast.radiofrance.fr/francemusique-hifi.aac"); //  128k mp3
-	audio.connecttohost(audioHost); //  128k mp3
-	// timers[2] = timerBegin(0, 80, true);
-	// timerAttachInterrupt(timers[2], &audio_loop, false);
-	// timerAlarmWrite(timers[2], 50 * 1000, true);
-	// timerAlarmEnable(timers[2]);
-
-	xTaskCreatePinnedToCore(
-		audio_loop, /* Function to implement the task */
-		"audio", /* Name of the task */
-		10000,  /* Stack size in words */
-		NULL,  /* Task input parameter */
-		1,  /* Priority of the task */
-		&AudioTask,  /* Task handle. */
-		1);
-
-}
-
 double fmap(double x, double in_min, double in_max, double out_min, double out_max)
 {
 	const double dividend = out_max - out_min;
@@ -280,7 +203,7 @@ double fmap(double x, double in_min, double in_max, double out_min, double out_m
 	if (divisor == 0)
 	{
 		log_e("Invalid map input range, min == max");
-		return -1; //AVR returns -1, SAM returns 0
+		return -1; // AVR returns -1, SAM returns 0
 	}
 	return (delta * dividend + (divisor / 2.0)) / divisor + out_min;
 }
@@ -356,7 +279,6 @@ void IRAM_ATTR button2_handler(Button2 &btn)
 		else if (current_mode)
 		{
 			udp_sending = !udp_sending;
-
 		}
 	}
 	if (click_type == DOUBLE_CLICK)
@@ -385,8 +307,6 @@ void IRAM_ATTR button_loop()
 {
 	btn1.loop();
 	btn2.loop();
-
-
 }
 
 void IRAM_ATTR call_buttons(void)
@@ -546,7 +466,7 @@ String processor(const String &var)
 		String string_audioHost = String(audioHost);
 		return (string_audioHost);
 	}
-		else if (var == "AUDIOVOLUME")
+	else if (var == "AUDIOVOLUME")
 	{
 		char *intStr;
 		intStr = (char *)malloc(sizeof(char) * 15);
@@ -617,7 +537,7 @@ void update_sta_list(void *params)
 		for (int i = 0; i < adapter_sta_list.num; i++)
 		{
 			tcpip_adapter_sta_info_t station = adapter_sta_list.sta[i];
-			char *ip_char = ip4addr_ntoa(&(station.ip)); //leak?
+			char *ip_char = ip4addr_ntoa(&(station.ip)); // leak?
 
 			HTTPClient http_request;
 			http_request.setConnectTimeout(5000);
@@ -779,10 +699,6 @@ char *get_data_from_csv(char *key)
 		Serial.printf("%s", buff);
 	}
 
-	// strchr()
-	// strncmp()
-	// size_t last_key_index = 0;
-	// size_t last_value_index = 0;
 	bool get_value = false;
 	for (size_t i = 0; i < file.size(); i++)
 	{
@@ -806,29 +722,22 @@ char *get_data_from_csv(char *key)
 	file.close();
 	return (0);
 
-	//get value from key here
+	// get value from key here
 }
 
-//create function to store value from key here
+// create function to store value from key here
 
 void setup_server_for_ap()
 {
-
 	server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
 			  {
 				  if (request->hasParam("orca_ip"))
 				  {
-
-					  // AsyncWebParameter* p = request->getParam("orca_ip");
-					  //   Serial.print("Orca ip :");
 					  uint8_t *buff;
 					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("orca_ip")->value().toCharArray((char *)buff, 50);
-					  //   Serial.println(request->getParam("orca_ip")->value().toCharArray());
 					  orca_ip = IPAddress(get_octet((char *)buff, 1), get_octet((char *)buff, 2), get_octet((char *)buff, 3), get_octet((char *)buff, 4));
-
 					  Serial.println(orca_ip.toString());
-
 					  set_data_to_csv("orca_ip", (char *)buff);
 					  free(buff);
 				  }
@@ -846,11 +755,8 @@ void setup_server_for_ap()
 					  uint8_t *buff;
 					  buff = (uint8_t *)malloc(sizeof(uint8_t) * 50);
 					  request->getParam("usine_ip")->value().toCharArray((char *)buff, 50);
-					  //   Serial.println(request->getParam("orca_ip")->value().toCharArray());
 					  usine_ip = IPAddress(get_octet((char *)buff, 1), get_octet((char *)buff, 2), get_octet((char *)buff, 3), get_octet((char *)buff, 4));
-
 					  Serial.println(usine_ip.toString());
-
 					  set_data_to_csv("usine_ip", (char *)buff);
 					  free(buff);
 				  }
@@ -993,8 +899,7 @@ void setup_server_for_ap()
 				  }
 				  request->send(SPIFFS, "/ApIndex.html", String(), false, processor);
 				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
-				  Serial.println("Client Here !");
-			  });
+				  Serial.println("Client Here !"); });
 
 	// 	server.on("/", HTTP_POST, [](AsyncWebServerRequest *request){
 
@@ -1194,8 +1099,7 @@ void setup_server_for_sta()
 
 				  request->send(SPIFFS, "/StaIndex.html", String(), false, processor);
 				  //   request->send(SPIFFS, "/index.html", String(), false, processor);
-				  Serial.println("Client Here !");
-			  });
+				  Serial.println("Client Here !"); });
 	server.begin();
 }
 
@@ -1310,7 +1214,7 @@ void setup_credentials()
 	// Serial.printf("Ap Password (csv) : \'%s\'\n", get_data_from_csv("ap_password"));
 }
 
-//Setup Motors, Udp here
+// Setup Motors, Udp here
 void ap_setup()
 {
 	WiFi.mode(WIFI_AP);
@@ -1327,9 +1231,7 @@ void ap_setup()
 	ledcAttachPin(MOTOR_2, motorChannel2);
 	ledcAttachPin(MOTOR_3, motorChannel3);
 	Udp.begin(localUdpPort);
-	setup_bone_conducer();
-
-
+	// setup_bone_conducer();
 
 	xTaskCreatePinnedToCore(update_sta_list, "update_sta_list", 10000, NULL, 1, &Task1, 1);
 }
@@ -1344,8 +1246,8 @@ void sta_setup()
 
 	WiFi.mode(WIFI_STA);
 
-	//Static ip attributon
-	// WiFi.config(local_IP, gateway, subnet);
+	// Static ip attributon
+	//  WiFi.config(local_IP, gateway, subnet);
 
 	WiFi.begin(ssid, password);
 	tft.drawString("Connecting", tft.width() / 2, tft.height() / 2);
@@ -1379,9 +1281,8 @@ void sta_setup()
 	Udp.begin(localUdpPort);
 	Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
 	Serial.println("Setting up audio flux");
-	setup_bone_conducer();
+	// setup_bone_conducer();
 	Serial.println("Audio flux Ok");
-
 }
 
 void setup()
@@ -1524,7 +1425,7 @@ void drawMotorsActivity2()
 	drawing_sprite.printf("%llds\n", esp_timer_get_time() / 1000000);
 	drawBatteryLevel(&drawing_sprite, 100, 00, battery_voltage);
 
-	//uint32_t color1 = TFT_BLUE;
+	// uint32_t color1 = TFT_BLUE;
 	uint32_t color2 = TFT_WHITE;
 	drawing_sprite.drawCircle(67, 120, 26, color2);
 	drawing_sprite.drawCircle(27, 190, 26, color2);
@@ -1536,7 +1437,7 @@ void drawMotorsActivity2()
 	drawing_sprite.drawLine(100, 215, 67, 195, color2);
 	drawing_sprite.drawLine(67, 195, 35, 215, color2);
 
-	//drawing_sprite.drawCircle(TFT_WIDTH / 2, TFT_HEIGHT/4 * i + TFT_HEIGHT/4 , 20, TFT_BLUE);
+	// drawing_sprite.drawCircle(TFT_WIDTH / 2, TFT_HEIGHT/4 * i + TFT_HEIGHT/4 , 20, TFT_BLUE);
 	if (pwmValues[0])
 	{
 		drawing_sprite.fillCircle(67, 120, pwmValues[0] / 11, TFT_BLUE);
@@ -1554,7 +1455,7 @@ void drawMotorsActivity2()
 	drawing_sprite.deleteSprite();
 }
 
-//create sta list instant
+// create sta list instant
 
 void drawNetworkActivity(bool is_udp_sending, bool is_osc_sending)
 {
@@ -1662,19 +1563,22 @@ void drawNetworkActivity(bool is_udp_sending, bool is_osc_sending)
 	// sta_list_mutex.unlock();
 }
 
-void set_pwm0(int pwm)
+void set_pwm0(int pwm, int tonality)
 {
-	ledcWrite(0, pwm);
+	ledcSetup(motorChannel1, tonality, motorResolution);
+	ledcWrite(motorChannel1, pwm);
 }
 
-void set_pwm1(int pwm)
+void set_pwm1(int pwm, int tonality)
 {
-	ledcWrite(1, pwm);
+	ledcSetup(motorChannel2, tonality, motorResolution);
+	ledcWrite(motorChannel2, pwm);
 }
 
-void set_pwm2(int pwm)
+void set_pwm2(int pwm, int tonality)
 {
-	ledcWrite(2, pwm);
+	ledcSetup(motorChannel3, tonality, motorResolution);
+	ledcWrite(motorChannel3, pwm);
 }
 
 void stop_pwm0(void)
@@ -1730,16 +1634,16 @@ void look_for_udp_message()
 
 		if (convertedPacket.indexOf("P") > -1 && convertedPacket.indexOf("D") > -1 && convertedPacket.indexOf("I") > -1)
 		{
-			//t_data_task dataTask;
+			// t_data_task dataTask;
 
 			int duration = convertedPacket.substring(convertedPacket.indexOf("D") + 1).toInt();
 			int intensity = convertedPacket.substring(convertedPacket.indexOf("I") + 1).toInt();
 			int pin = convertedPacket.substring(convertedPacket.indexOf("P") + 1).toInt();
-
+			int tonality = convertedPacket.substring(convertedPacket.indexOf("T") + 1).toInt();
 			if (pin <= 2 && pin >= 0)
 			{
 				timers_end[pin] = esp_timer_get_time() / 1000 + duration;
-				g_set_pwm[pin](intensity / 5);
+				g_set_pwm[pin](intensity / 5, tonality);
 				pwmValues[pin] = intensity / 5;
 			}
 		}
@@ -1833,7 +1737,7 @@ char convertBase35ToChar(int nb)
 
 void sendUdpFractalState(float alpha, const IPAddress ipOut, const uint32_t portOut)
 {
-	//VABCD
+	// VABCD
 	char letter = ' ';
 	if (alpha <= 0.6)
 		letter = 'A';
@@ -2086,7 +1990,6 @@ void update_sensors(t_sensors *sensors)
 	sensors->gyro.y = gyro.g.y;
 	sensors->gyro.z = gyro.g.z;
 
-
 	// sensors->gyro.x =42;
 	// sensors->gyro.y = 42;
 	// sensors->gyro.z = 42;
@@ -2095,13 +1998,9 @@ void update_sensors(t_sensors *sensors)
 	sensors->mag.y = mag_event.magnetic.y;
 	sensors->mag.z = mag_event.magnetic.z;
 
-
 	// Serial.printf("Acc  : %02f | %02f | %02f\n", sensors->accel.x, sensors->accel.y, sensors->accel.z);
 	// Serial.printf("Gyro : %02f | %02f | %02f\n", sensors->gyro.x, sensors->gyro.y, sensors->gyro.z);
 	// Serial.printf("Mag  : %02f | %02f | %02f\n", sensors->mag.x, sensors->mag.y, sensors->mag.z);
-
-
-
 }
 
 void sendOscMessage(float dfa_value, t_sensors *sensors, const IPAddress ipOut, const uint32_t portOut)
@@ -2386,7 +2285,7 @@ void loop()
 		{
 			if (timers_end[i] != 0 && timers_end[i] < esp_timer_get_time() / 1000)
 			{
-				g_set_pwm[i](0);
+				g_set_pwm[i](0, 0);
 				timers_end[i] = 0;
 				pwmValues[i] = 0;
 			}
@@ -2396,7 +2295,7 @@ void loop()
 		{
 			update_sensors(&sensors);
 		}
-		
+
 		float dfa_value = updateDFA(sensors);
 		// const IPAddress usine_ip(192,168,100,100);
 		// const unsigned int usine_port = 2002;          // remote port to receive OSC
@@ -2428,7 +2327,6 @@ void loop()
 		{
 
 			drawMotorsActivity(tft, pwmValues, localUdpPort, ssid, udp_sending, osc_sending);
-		
 		}
 		else if ((current_mode & MODE_MASK) == SENSORS_MODE)
 		{

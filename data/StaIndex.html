@@ -1,121 +1,200 @@
 <html>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="tripode.ico" />
+    <link rel="stylesheet" href="main.css" />
 
-<head>
-	<meta charset="UTF-8">
-	<link rel="icon" href="tripode.ico">
-	<link rel="stylesheet" href="main.css">
+    <!-- <link rel="stylesheet" href="style.css" /> -->
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css"> -->
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/csshake/1.5.3/csshake-slow.min.css" integrity="sha512-gXyNuRltygC0lrFrvZ7YXbPS++xafArjyyDg1aC1CWysBnEBACWbQ0fEpfqTTFpikMg8826v6vTZ5bOhHSa8xg==" crossorigin="anonymous" referrerpolicy="no-referrer" /> -->
+  </head>
 
+  <body></body>
+  <h1>Tripodes settings</h1>
 
-	<!-- <link rel="stylesheet" href="style.css" /> -->
-	<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css"> -->
-	<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/csshake/1.5.3/csshake-slow.min.css" integrity="sha512-gXyNuRltygC0lrFrvZ7YXbPS++xafArjyyDg1aC1CWysBnEBACWbQ0fEpfqTTFpikMg8826v6vTZ5bOhHSa8xg==" crossorigin="anonymous" referrerpolicy="no-referrer" /> -->
-</head>
+  <form action="/" method="get" class="form-example">
+    <div class="form-example">
+      <label for="orca_ip">Ip of Orca device :</label>
+      <input
+        type="text"
+        name="orca_ip"
+        id="orca_ip"
+        placeholder="Ip Addr"
+        value="%ORCAIP%"
+        required
+      />
+    </div>
+    <div class="form-example">
+      <label for="orca_port">Port of Orca device :</label>
+      <input
+        type="text"
+        name="orca_port"
+        id="orca_port"
+        placeholder="Default: 49160"
+        value="%ORCAPORT%"
+        required
+      />
+    </div>
+    <div class="form-example">
+      <input type="submit" value="Update" />
+    </div>
+  </form>
 
-<body>
-</body>
-<h1>Tripodes settings</h1>
+  <form action="/" method="get" class="form-example">
+    <div class="form-example">
+      <label for="usine_ip">Ip of Usine device :</label>
+      <input
+        type="text"
+        name="usine_ip"
+        id="usine_ip"
+        placeholder="Ip Addr"
+        value="%USINEIP%"
+        required
+      />
+    </div>
+    <div class="form-example">
+      <label for="usine_port">Port of Usine device :</label>
+      <input
+        type="text"
+        name="usine_port"
+        id="usine_port"
+        placeholder="Port"
+        value="%USINEPORT%"
+        required
+      />
+    </div>
+    <div class="form-example">
+      <input type="submit" value="Update" />
+    </div>
+  </form>
 
-<form action="/" method="get" class="form-example">
-	<div class="form-example">
-		<label for="orca_ip">Ip of Orca device :</label>
-		<input type="text" name="orca_ip" id="orca_ip" placeholder="Ip Addr" value="%ORCAIP%" required>
-	</div>
-	<div class="form-example">
-		<label for="orca_port">Port of Orca device :</label>
-		<input type="text" name="orca_port" id="orca_port" placeholder="Default: 49160" value="%ORCAPORT%" required>
-	</div>
-	<div class="form-example">
-		<input type="submit" value="Update">
-	</div>
-</form>
+  <form action="/" method="get" class="form-example">
+    <div class="form-example">
+      <label for="tripode_id">Tripode identifier :</label>
+      <input
+        type="text"
+        name="tripode_id"
+        id="tripode_id"
+        placeholder="Tripode ID"
+        value="%TRIPODEID%"
+        required
+      />
+    </div>
+    <div class="form-example">
+      <label for="fractal_state_pos_x">Fractal state X position :</label>
+      <input
+        type="number"
+        min="0"
+        max="1000"
+        name="fractal_state_pos_x"
+        id="fractal_state_pos_x"
+        placeholder="position"
+        value="%FRACTALSTATEPOSX%"
+        required
+      />
+      <label for="fractal_state_pos_x">Eg: 0, 12 or 24</label>
+    </div>
+    <div class="form-example">
+      <label for="fractal_state_pos_y">Fractal state Y position :</label>
+      <input
+        type="number"
+        min="0"
+        max="1000"
+        name="fractal_state_pos_y"
+        id="fractal_state_pos_y"
+        placeholder="position"
+        value="%FRACTALSTATEPOSY%"
+        required
+      />
+      <label for="fractal_state_pos_y">Eg: 10</label>
+    </div>
+    <div class="form-example">
+      <label for="glyph_pos_x">Glyph X position :</label>
+      <input
+        type="number"
+        min="0"
+        max="1000"
+        name="glyph_pos_x"
+        id="glyph_pos_x"
+        placeholder="position"
+        value="%GLYPHPOSX%"
+        required
+      />
+      <label for="glyph_pos_x">Eg: 48</label>
+    </div>
+    <div class="form-example">
+      <label for="glyph_pos_y">Glyph Y position :</label>
+      <input
+        type="number"
+        min="0"
+        max="1000"
+        name="glyph_pos_y"
+        id="glyph_pos_y"
+        placeholder="position"
+        value="%GLYPHPOSY%"
+        required
+      />
+      <label for="glyph_pos_y">Eg: 6, 35 or 64</label>
+    </div>
 
-<form action="/" method="get" class="form-example">
-	<div class="form-example">
-		<label for="usine_ip">Ip of Usine device :</label>
-		<input type="text" name="usine_ip" id="usine_ip" placeholder="Ip Addr" value="%USINEIP%" required>
-	</div>
-	<div class="form-example">
-		<label for="usine_port">Port of Usine device :</label>
-		<input type="text" name="usine_port" id="usine_port" placeholder="Port" value="%USINEPORT%" required>
-	</div>
-	<div class="form-example">
-		<input type="submit" value="Update">
-	</div>
-</form>
+    <div class="form-example">
+      <input type="submit" value="Update" />
+    </div>
+  </form>
 
-<form action="/" method="get" class="form-example">
-	<div class="form-example">
-		<label for="tripode_id">Tripode identifier :</label>
-		<input type="text" name="tripode_id" id="tripode_id" placeholder="Tripode ID" value="%TRIPODEID%" required>
-	</div>
-	<div class="form-example">
-		<label for="fractal_state_pos_x">Fractal state X position :</label>
-		<input type="number" min="0" max="1000" name="fractal_state_pos_x" id="fractal_state_pos_x" placeholder="position" value="%FRACTALSTATEPOSX%" required>
-		<label for="fractal_state_pos_x">Eg: 0, 12 or 24</label>
-	</div>
-	<div class="form-example">
-		<label for="fractal_state_pos_y">Fractal state Y position :</label>
-		<input type="number" min="0" max="1000" name="fractal_state_pos_y" id="fractal_state_pos_y" placeholder="position" value="%FRACTALSTATEPOSY%" required>
-		<label for="fractal_state_pos_y">Eg: 10</label>
-	</div>
-	<div class="form-example">
-		<label for="glyph_pos_x">Glyph X position :</label>
-		<input type="number" min="0" max="1000" name="glyph_pos_x" id="glyph_pos_x" placeholder="position" value="%GLYPHPOSX%" required>
-		<label for="glyph_pos_x">Eg: 48</label>
-	</div>
-	<div class="form-example">
-		<label for="glyph_pos_y">Glyph Y position :</label>
-		<input type="number" min="0" max="1000" name="glyph_pos_y" id="glyph_pos_y" placeholder="position" value="%GLYPHPOSY%" required>
-		<label for="glyph_pos_y">Eg: 6, 35 or 64</label>
-	</div>
+  <form action="/" method="get" class="form-example">
+    <div class="form-example">
+      <label for="sta_ssid">STA SSID :</label>
+      <input
+        type="text"
+        name="sta_ssid"
+        id="sta_ssid"
+        placeholder="Sta Ssid"
+        value="%STASSID%"
+        required
+      />
+    </div>
+    <div class="form-example">
+      <label for="sta_password">STA PASSWORD :</label>
+      <input
+        type="text"
+        name="sta_password"
+        id="sta_password"
+        placeholder="Sta Password"
+        value="%STAPASSWORD%"
+        required
+      />
+    </div>
+    <div class="form-example">
+      <input type="submit" value="Update" />
+    </div>
+  </form>
 
-
-	<div class="form-example">
-		<input type="submit" value="Update">
-	</div>
-</form>
-
-
-<form action="/" method="get" class="form-example">
-	<div class="form-example">
-		<label for="sta_ssid">STA SSID :</label>
-		<input type="text" name="sta_ssid" id="sta_ssid" placeholder="Sta Ssid" value="%STASSID%" required>
-	</div>
-	<div class="form-example">
-		<label for="sta_password">STA PASSWORD :</label>
-		<input type="text" name="sta_password" id="sta_password" placeholder="Sta Password" value="%STAPASSWORD%" required>
-	</div>
-	<div class="form-example">
-		<input type="submit" value="Update">
-	</div>
-</form>
-
-<form action="/" method="get" class="form-example">
-	<div class="form-example">
-		<label for="ap_ssid">AP SSID :</label>
-		<input type="text" name="ap_ssid" id="ap_ssid" placeholder="Ap Ssid" value="%APSSID%" required>
-	</div>
-	<div class="form-example">
-		<label for="ap_password">AP PASSWORD :</label>
-		<input type="text" name="ap_password" id="ap_password" placeholder="Ap Passord" value="%APPASSWORD%" required>
-	</div>
-	<div class="form-example">
-		<input type="submit" value="Update">
-	</div>
-</form>
-
-<form action="/" method="get" class="form-example">
-	<div class="form-example">
-		<label for="audio_host">AUDIO HOST :</label>
-		<input type="text" name="audio_host" id="audio_host" placeholder="Audio Host" value="%AUDIOHOST%" required>
-	</div>
-	<div class="form-example">
-		<label for="audio_volume">AUDIO VOLUME (1-21) :</label>
-		<input type="number" min="0" max="21" name="audio_volume" id="audio_volume" placeholder="volume" value="%AUDIOVOLUME%" required>
-	</div>
-	<div class="form-example">
-		<input type="submit" value="Update">
-	</div>
-</form>
-
+  <form action="/" method="get" class="form-example">
+    <div class="form-example">
+      <label for="ap_ssid">AP SSID :</label>
+      <input
+        type="text"
+        name="ap_ssid"
+        id="ap_ssid"
+        placeholder="Ap Ssid"
+        value="%APSSID%"
+        required
+      />
+    </div>
+    <div class="form-example">
+      <label for="ap_password">AP PASSWORD :</label>
+      <input
+        type="text"
+        name="ap_password"
+        id="ap_password"
+        placeholder="Ap Passord"
+        value="%APPASSWORD%"
+        required
+      />
+    </div>
+    <div class="form-example">
+      <input type="submit" value="Update" />
+    </div>
+  </form>
 </html>
