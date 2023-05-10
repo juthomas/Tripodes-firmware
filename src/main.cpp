@@ -77,6 +77,84 @@ enum e_wifi_modes
 
 t_data_task g_data_task[3];
 
+double notefrequencies[] = {
+	16.35,//    0 C0
+	17.32,//    1 c0
+	18.35,//    2 D0
+	19.45,//    3 d0
+	20.60,//    4 E0
+	21.83,//    5 F0
+	23.12,//    6 f0
+	24.50,//    7 G0
+	25.96,//    8 g0
+	27.50,//    9 A0
+	29.14,//   10 a0
+	30.87,//   11 B0
+	32.70,//   12 C1
+	34.65,//   13 c1
+	36.71,//   14 D1
+	38.89,//   15 d1
+	41.20,//   16 E1
+	43.65,//   17 F1
+	46.25,//   18 f1
+	49.00,//   19 G1
+	51.91,//   20 g1
+	55.00,//   21 A1
+	58.27,//   22 a1
+	61.74,//   23 B1
+	65.41,//   24 C2
+	69.30,//   25 c2
+	73.42,//   26 D2
+	77.78,//   27 d2
+	82.41,//   28 E2
+	87.31,//   29 F2
+	92.50,//   30 f2
+	98.00,//   31 G2
+	103.83,//  32 g2
+	110.00,//  33 A2
+	116.54,//  34 a2
+	123.47,//  35 B2
+	130.81,//  36 C3
+	138.59,//  37 c3
+	146.83,//  38 D3
+	155.56,//  39 d3
+	164.81,//  40 E3
+	174.61,//  41 F3
+	185.00,//  42 f3
+	196.00,//  43 G3
+	207.65,//  44 g3
+	220.00,//  45 A3
+	233.08,//  46 a3
+	246.94,//  47 B3
+	261.63,//  48 C4
+	277.18,//  49 c4
+	293.66,//  50 D4
+	311.13,//  51 d4
+	329.63,//  52 E4
+	349.23,//  53 F4
+	369.99,//  54 f4
+	293.00,//  55 G4
+	415.30,//  56 g4
+	440.00,//  57 A4
+	466.16,//  58 a4
+	493.88,//  59 B4
+	523.25,//  60 C5
+	554.37,//  61 c5
+	587.33,//  62 D5
+//Finish : https://pages.mtu.edu/~suits/notefreqs.html
+
+
+
+
+
+
+
+
+
+
+} 
+
+
 int timers_end[3] = {0, 0, 0};
 
 #define BLACK 0x0000
@@ -1760,48 +1838,49 @@ int convertOrcaMidiToHalfTones(char c)
 {
 	switch (c)
 	{
-	case 'A':
+	case 'C':
 		return 0;
 		break;
-	case 'a':
+	case 'c':
 		return 1;
 		break;
-	case 'B':
-		return 2;
-		break;
-	case 'b':
-		return 2;
-		break;
-	case 'C':
-		return 3;
-		break;
-	case 'c':
-		return 4;
-		break;
 	case 'D':
-		return 5;
+		return 2;
 		break;
 	case 'd':
-		return 6;
+		return 3;
 		break;
 	case 'E':
-		return 7;
+		return 4;
 		break;
 	case 'e':
-		return 7;
+		return 4;
 		break;
 	case 'F':
-		return 8;
+		return 5;
 		break;
 	case 'f':
-		return 9;
+		return 6;
 		break;
 	case 'G':
-		return 10;
+		return 7;
 		break;
 	case 'g':
+		return 8;
+		break;
+	case 'A':
+		return 9;
+		break;
+	case 'a':
+		return 10;
+		break;
+	case 'B':
 		return 11;
 		break;
+	case 'b':
+		return 11;
+		break;
+
 	default:
 		return 0;
 		break;
