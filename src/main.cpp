@@ -70,7 +70,8 @@ enum e_wifi_modes
 	SENSORS_MODE = 0b01000,
 	DFA_MODE     = 0b01100,
 	AP_MODE      = 0b10000,
-	// RUNE_MODE    = 0b10100,
+	RUNE_MODE    = 0b10100,
+	MIDI_MODE    = 0b11000,
 	MODE_MASK    = 0b11100,
 };
 
@@ -233,6 +234,14 @@ void IRAM_ATTR button1_handler(Button2 &btn)
 			}
 			else if ((current_mode & MODE_MASK) == DFA_MODE)
 			{
+				current_mode = RUNE_MODE | STA_MASK;
+			}
+			else if ((current_mode & MODE_MASK) == RUNE_MODE)
+			{
+				current_mode = MIDI_MODE | STA_MASK;
+			}
+			else if ((current_mode & MODE_MASK) == MIDI_MODE)
+			{
 				current_mode = STD_MODE | STA_MASK;
 			}
 		}
@@ -253,8 +262,20 @@ void IRAM_ATTR button1_handler(Button2 &btn)
 			else if ((current_mode & MODE_MASK) == DFA_MODE)
 			{
 				Serial.printf("----- DFA mode : %d\n", current_mode);
-				current_mode = AP_MODE | AP_MASK;
+				current_mode = RUNE_MODE | AP_MASK;
 				Serial.printf("--AF- DFA mode : %d\n", current_mode);
+			}
+			else if ((current_mode & MODE_MASK) == RUNE_MODE)
+			{
+				Serial.printf("----- RUNE mode : %d\n", current_mode);
+				current_mode = MIDI_MODE | AP_MASK;
+				Serial.printf("--AF- RUNE mode : %d\n", current_mode);
+			}
+			else if ((current_mode & MODE_MASK) == MIDI_MODE)
+			{
+				Serial.printf("----- MIDI mode : %d\n", current_mode);
+				current_mode = AP_MODE | AP_MASK;
+				Serial.printf("--AF- MIDI mode : %d\n", current_mode);
 			}
 			else if ((current_mode & MODE_MASK) == AP_MODE)
 			{
@@ -1717,6 +1738,76 @@ void sendUpdAplhaMessage(float alpha, const IPAddress ipOut, const uint32_t port
 	// delay(1000);
 }
 
+
+int convertCharToBase35(char c)
+{
+	if ((c >= 'A' && c <= 'Z') )
+	{
+		return (c - 'A' + 10);
+	}
+	else if (c >= 'a' && c <= 'z')
+	{
+		return (c - 'a' + 10);
+	}
+	else if (c >= '0' && c <= '9')
+	{
+		return (c - '0');
+	} 
+	return 0;
+}
+
+int convertOrcaMidiToHalfTones(char c)
+{
+	switch (c)
+	{
+	case 'A':
+		return 0;
+		break;
+	case 'a':
+		return 1;
+		break;
+	case 'B':
+		return 2;
+		break;
+	case 'b':
+		return 2;
+		break;
+	case 'C':
+		return 3;
+		break;
+	case 'c':
+		return 4;
+		break;
+	case 'D':
+		return 5;
+		break;
+	case 'd':
+		return 6;
+		break;
+	case 'E':
+		return 7;
+		break;
+	case 'e':
+		return 7;
+		break;
+	case 'F':
+		return 8;
+		break;
+	case 'f':
+		return 9;
+		break;
+	case 'G':
+		return 10;
+		break;
+	case 'g':
+		return 11;
+		break;
+	default:
+		return 0;
+		break;
+	}
+}
+
 char convertBase35ToChar(int nb)
 {
 	if (nb < 0)
@@ -1761,6 +1852,20 @@ void sendUdpFractalState(float alpha, const IPAddress ipOut, const uint32_t port
 			   speed, convertBase35ToChar(base35), convertBase35ToChar(base35 + 5), fractal_state_pos_x, fractal_state_pos_y);
 
 	// Udp.printf("write:%cR%c\n  XE;%d;%d", convertBase35ToChar(base35), convertBase35ToChar(base35 + 5), fractal_state_pos_x, fractal_state_pos_y);
+	Udp.endPacket();
+}
+
+void sendUdpXYZ(t_float3 gyro, const IPAddress ipOut, const uint32_t portOut)
+{
+		// VABCD
+	char letter = ' ';
+	int base35X = (int)fmap(gyro.x, 0, 40000, 0, 9);
+	int base35Y = (int)fmap(gyro.y, 0, 40000, 0, 9);
+	int base35Z = (int)fmap(gyro.z, 0, 40000, 0, 9);
+
+	//12
+	Udp.beginPacket(ipOut, portOut);
+	Udp.printf("write:1V%c2V%c3V%c;0;0\n", convertBase35ToChar(base35X), convertBase35ToChar(base35Y), convertBase35ToChar(base35Z), fractal_state_pos_x, fractal_state_pos_y);
 	Udp.endPacket();
 }
 
@@ -2274,6 +2379,28 @@ void udpInitOrca(const IPAddress ipOut, const uint32_t portOut)
 	}
 }
 
+void play_midi_notes()
+{
+	int packetSize = Udp.parsePacket();
+	if (packetSize)
+	{
+		int len = Udp.read(incomingPacket, 255);
+		if (len > 0)
+		{
+			incomingPacket[len] = 0;
+		}
+		if (len > 4)
+		{
+			int16_t channel = convertCharToBase35(incomingPacket[0]);
+			int16_t octave = convertCharToBase35(incomingPacket[1]);
+			int16_t note = convertOrcaMidiToHalfTones(incomingPacket[2]);
+			int16_t velocity = convertCharToBase35(incomingPacket[3]);
+			int16_t length = convertCharToBase35(incomingPacket[4]);
+			Serial.printf("C %d O %d N %d V %d L %d\n", channel, octave, note, velocity, length);
+		}
+	}
+}
+
 void loop()
 {
 	t_sensors sensors;
@@ -2281,7 +2408,14 @@ void loop()
 	if (1)
 	{
 
-		look_for_udp_message();
+		if ((current_mode & MODE_MASK) == MIDI_MODE)
+		{
+			play_midi_notes();
+		}
+		else
+		{
+			look_for_udp_message();
+		}
 
 		for (int i = 0; i < 3; i++)
 		{
@@ -2313,14 +2447,16 @@ void loop()
 			if (loop_counter % updMessageRate == 0)
 			{
 				sendUpdMessage("select:0;0", orca_ip, orca_port);
-				sendUdpFractalState(dfa_value, orca_ip, orca_port);
+				sendUdpXYZ(sensors.gyro,  orca_ip, orca_port);
+				Serial.println("Gyrosended");
+				
+				// sendUdpFractalState(dfa_value, orca_ip, orca_port);
 				// sendUpdAplhaMessage(dfa_value, orca_ip, orca_port);
 			}
 			if (loop_counter % updDrawRate == 0 && UDP_DRAWING == 1)
 			{
 				//  udpInitOrca(orca_ip, orca_port);
-
-				drawInOrca(dfa_value, orca_ip, orca_port);
+				// drawInOrca(dfa_value, orca_ip, orca_port);
 			}
 			loop_counter = loop_counter > 1000 ? 0 : loop_counter + 1;
 		}
@@ -2330,6 +2466,10 @@ void loop()
 
 			drawMotorsActivity(tft, pwmValues, localUdpPort, ssid, udp_sending, osc_sending);
 		}
+		else if ((current_mode & MODE_MASK) == MIDI_MODE)
+		{
+			drawMidiActivity(tft, pwmValues, localUdpPort, ssid, udp_sending, osc_sending);
+		}
 		else if ((current_mode & MODE_MASK) == SENSORS_MODE)
 		{
 			drawSensorsActivity(tft, sensors, oscAddress, udp_sending, osc_sending);
@@ -2338,13 +2478,17 @@ void loop()
 		{
 			drawAlpha(tft, dfa_value, udp_sending, osc_sending);
 		}
+		else if ((current_mode & MODE_MASK) == RUNE_MODE)
+		{
+			drawRunes(tft, dfa_value, udp_sending, osc_sending);
+		}
 		else if ((current_mode & MODE_MASK) == AP_MODE)
 		{
 			drawNetworkActivity(udp_sending, osc_sending);
 			// web();
 		}
 	}
-	Serial.println(".");
+	// Serial.println(".");
 	delay(25);
 	// delay(500);
 	// put your main code here, to run repeatedly:
