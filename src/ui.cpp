@@ -76,8 +76,58 @@ void drawUpdSendingActivity(TFT_eSprite *sprite, bool udp_activity, bool osc_act
 	}
 }
 
-
-void drawMidiActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort, const char *ssid, bool is_upd_sending, bool is_osc_sending)
+char HalfTonestoNote(int c)
+{
+	switch (c % 12)
+	{
+	case 0:
+		return 'C';
+		break;
+	case 1:
+		return c;
+		break;
+	case 2:
+		return 'D';
+		break;
+	case 3:
+		return 'd';
+		break;
+	case 4:
+		return 'E';
+		break;
+	// case 'e':
+	// return 4;
+	// break;
+	case 5:
+		return 'F';
+		break;
+	case 6:
+		return 'f';
+		break;
+	case 7:
+		return 'G';
+		break;
+	case 8:
+		return 'g';
+		break;
+	case 9:
+		return 'A';
+		break;
+	case 10:
+		return 'a';
+		break;
+	case 11:
+		return 'B';
+		break;
+	// case 'b':
+	// return 11;
+	// break;
+	default:
+		return 0;
+		break;
+	}
+}
+void drawMidiActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t toneValues[3], int32_t localUdpPort, const char *ssid, bool is_upd_sending, bool is_osc_sending)
 {
 
 	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
@@ -128,8 +178,7 @@ void drawMidiActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort, 
 	drawing_sprite.setTextColor(TFT_WHITE);
 	drawing_sprite.printf("%s\n\n", tripode_id);
 
-
-	drawing_sprite.setTextColor(TFT_RED);
+	drawing_sprite.setTextColor(TFT_GREEN);
 	drawing_sprite.printf("MIDI MODE !!!\n");
 	// drawing_sprite.printf("%s\n", TRIPODE_ID);
 
@@ -151,22 +200,34 @@ void drawMidiActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort, 
 	if (pwmValues[0])
 	{
 		drawing_sprite.fillCircle(67, 120, pwmValues[0] / 2, TFT_BLUE);
+		drawing_sprite.setTextColor(TFT_WHITE);
+		drawing_sprite.setTextSize(1);
+		drawing_sprite.setCursor(62, 115);
+		drawing_sprite.printf("%c%c", HalfTonestoNote(toneValues[0]), toneValues[0] / 12 + '0');
 		// Serial.printf("Seconds lefts : %lf\n", timerAlarmReadSeconds(timers[0]));
 	}
 	if (pwmValues[1])
 	{
 		drawing_sprite.fillCircle(27, 190, pwmValues[1] / 2, TFT_BLUE);
+				drawing_sprite.setTextColor(TFT_WHITE);
+		drawing_sprite.setTextSize(1);
+		drawing_sprite.setCursor(22, 185);
+		drawing_sprite.printf("%c%c", HalfTonestoNote(toneValues[1]), toneValues[1] / 12 + '0');
 	}
 	if (pwmValues[2])
 	{
 		drawing_sprite.fillCircle(108, 190, pwmValues[2] / 2, TFT_BLUE);
+				drawing_sprite.setTextColor(TFT_WHITE);
+		drawing_sprite.setTextSize(1);
+		drawing_sprite.setCursor(103, 185);
+		drawing_sprite.printf("%c%c", HalfTonestoNote(toneValues[2]), toneValues[2] / 12 + '0');
 	}
+
 	drawUpdSendingActivity(&drawing_sprite, is_upd_sending, is_osc_sending);
 
 	drawing_sprite.pushSprite(0, 0);
 	drawing_sprite.deleteSprite();
 }
-
 
 void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort, const char *ssid, bool is_upd_sending, bool is_osc_sending)
 {
@@ -682,7 +743,6 @@ void printRunes(TFT_eSprite *drawing_sprite, float alpha)
 	// (*drawing_sprite).printf("#### #### #### ####");
 	// (*drawing_sprite).setCursor(offset_left, offset_top + space * 13);
 	// (*drawing_sprite).printf("#### #### #### ####");
-
 
 	if (alpha <= 0.6)
 	{

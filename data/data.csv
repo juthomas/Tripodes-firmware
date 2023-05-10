@@ -2,8 +2,8 @@ orca_ip,192.168.4.2
 orca_port,49160
 usine_ip,192.168.4.2
 usine_port,2002
-sta_ssid,nsdos-network
-sta_password,F3Dj1W4b
+sta_ssid,tripodesAP
+sta_password,44448888
 ap_ssid,tripodesAP
 ap_password,44448888
 tripode_id,1_7

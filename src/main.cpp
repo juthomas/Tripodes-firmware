@@ -90,6 +90,7 @@ double notefrequencies[] = {
 	27.50,//    9 A0
 	29.14,//   10 a0
 	30.87,//   11 B0
+
 	32.70,//   12 C1
 	34.65,//   13 c1
 	36.71,//   14 D1
@@ -102,6 +103,7 @@ double notefrequencies[] = {
 	55.00,//   21 A1
 	58.27,//   22 a1
 	61.74,//   23 B1
+
 	65.41,//   24 C2
 	69.30,//   25 c2
 	73.42,//   26 D2
@@ -114,6 +116,7 @@ double notefrequencies[] = {
 	110.00,//  33 A2
 	116.54,//  34 a2
 	123.47,//  35 B2
+
 	130.81,//  36 C3
 	138.59,//  37 c3
 	146.83,//  38 D3
@@ -126,6 +129,7 @@ double notefrequencies[] = {
 	220.00,//  45 A3
 	233.08,//  46 a3
 	246.94,//  47 B3
+
 	261.63,//  48 C4
 	277.18,//  49 c4
 	293.66,//  50 D4
@@ -133,11 +137,12 @@ double notefrequencies[] = {
 	329.63,//  52 E4
 	349.23,//  53 F4
 	369.99,//  54 f4
-	293.00,//  55 G4
+	292.00,//  55 G4
 	415.30,//  56 g4
 	440.00,//  57 A4
 	466.16,//  58 a4
 	493.88,//  59 B4
+
 	523.25,//  60 C5
 	554.37,//  61 c5
 	587.33,//  62 D5
@@ -183,33 +188,14 @@ double notefrequencies[] = {
 	4978.03,// 99 d8
 	5274.04,//100 E8
 	5587.65,//101 F8
-	5919.91,//101 f8
-	6271.93,//102 G8
-	6644.88,//103 g8
-	7040.00,//104 A8
-	7458.62,//105 a8
-	7902.13,//106 B8
-
-
-
-
-
-
-
-
-
+	5919.91,//102 f8
+	6271.93,//103 G8
+	6644.88,//104 g8
+	7040.00,//105 A8
+	7458.62,//106 a8
+	7902.13,//107 B8
 //Finish : https://pages.mtu.edu/~suits/notefreqs.html
-
-
-
-
-
-
-
-
-
-
-} 
+};
 
 
 int timers_end[3] = {0, 0, 0};
@@ -254,11 +240,11 @@ char incomingPacket[255];
 String convertedPacket;
 char replyPacket[] = "Message received";
 
-void set_pwm0(int pwm, int tonality);
-void set_pwm1(int pwm, int tonality);
-void set_pwm2(int pwm, int tonality);
+void set_pwm0(int pwm, double tonality);
+void set_pwm1(int pwm, double tonality);
+void set_pwm2(int pwm, double tonality);
 
-typedef void (*t_set_pwm)(int pwm, int tonality);
+typedef void (*t_set_pwm)(int pwm, double tonality);
 
 #define TASK_NUMBER 3
 static const t_set_pwm g_set_pwm[TASK_NUMBER] = {
@@ -284,6 +270,7 @@ WiFiClass WiFiAP;
 
 bool timersActives[3];
 int pwmValues[3];
+int toneValues[3] = {-1, -1, -1};
 int timerPansements[3];
 hw_timer_t *timers[4] = {NULL, NULL, NULL, NULL};
 
@@ -1721,19 +1708,19 @@ void drawNetworkActivity(bool is_udp_sending, bool is_osc_sending)
 	// sta_list_mutex.unlock();
 }
 
-void set_pwm0(int pwm, int tonality)
+void set_pwm0(int pwm, double tonality)
 {
 	ledcSetup(motorChannel1, tonality, motorResolution);
 	ledcWrite(motorChannel1, pwm);
 }
 
-void set_pwm1(int pwm, int tonality)
+void set_pwm1(int pwm, double tonality)
 {
 	ledcSetup(motorChannel2, tonality, motorResolution);
 	ledcWrite(motorChannel2, pwm);
 }
 
-void set_pwm2(int pwm, int tonality)
+void set_pwm2(int pwm, double tonality)
 {
 	ledcSetup(motorChannel3, tonality, motorResolution);
 	ledcWrite(motorChannel3, pwm);
@@ -2517,6 +2504,7 @@ void udpInitOrca(const IPAddress ipOut, const uint32_t portOut)
 
 void play_midi_notes()
 {
+	static int current_note = 0;
 	int packetSize = Udp.parsePacket();
 	if (packetSize)
 	{
@@ -2525,16 +2513,57 @@ void play_midi_notes()
 		{
 			incomingPacket[len] = 0;
 		}
-		if (len > 4)
+		if (len > 5)
 		{
-			int16_t channel = convertCharToBase35(incomingPacket[0]);
-			int16_t octave = convertCharToBase35(incomingPacket[1]);
-			int16_t note = convertOrcaMidiToHalfTones(incomingPacket[2]);
-			int16_t velocity = convertCharToBase35(incomingPacket[3]);
-			int16_t length = convertCharToBase35(incomingPacket[4]);
+			int16_t channel = convertCharToBase35(incomingPacket[1]);
+			int16_t octave = convertCharToBase35(incomingPacket[2]);
+			int16_t note = convertOrcaMidiToHalfTones(incomingPacket[3]);
+			int16_t velocity = convertCharToBase35(incomingPacket[4]) * 7;
+			int16_t length = convertCharToBase35(incomingPacket[5]);
 			Serial.printf("C %d O %d N %d V %d L %d\n", channel, octave, note, velocity, length);
+
+		if (timers_end[0] == 0)
+		{
+
+			timers_end[0] = esp_timer_get_time() / 1000 + length * 100;//Duration
+			g_set_pwm[0](velocity / 5, notefrequencies[octave * 12 + note]);
+			pwmValues[0] = velocity / 5;
+			toneValues[0] = octave * 12 + note;
+		}
+		else if (timers_end[1] == 0)
+		{
+			timers_end[1] = esp_timer_get_time() / 1000 + length * 100;//Duration
+			g_set_pwm[1](velocity / 5, notefrequencies[octave * 12 + note]);
+			pwmValues[1] = velocity / 5;
+			toneValues[1] = octave * 12 + note;
+		}
+		else if (timers_end[2] == 0)
+		{
+			timers_end[2] = esp_timer_get_time() / 1000 + length * 100;//Duration
+			g_set_pwm[2](velocity / 5, notefrequencies[octave * 12 + note]);
+			pwmValues[2] = velocity / 5;
+			toneValues[2] = octave * 12 + note;
 		}
 	}
+	}
+	// if (timers_end[0] == 0)
+	// {
+	// 	Serial.printf("Note played : %f\n", notefrequencies[current_note]);
+	// 	timers_end[0] = esp_timer_get_time() / 1000 + 300;//Duration
+	// 	g_set_pwm[0](255 / 5, notefrequencies[current_note]);
+	// 	pwmValues[0] = 255 / 5;
+
+
+	// 	timers_end[1] = esp_timer_get_time() / 1000 + 300;//Duration
+	// 	g_set_pwm[1](255 / 5, notefrequencies[current_note]);
+	// 	pwmValues[1] = 255 / 5;
+
+	// 	timers_end[2] = esp_timer_get_time() / 1000 + 300;//Duration
+	// 	g_set_pwm[2](255 / 5, notefrequencies[current_note]);
+	// 	pwmValues[2] = 255 / 5;
+
+	// 	current_note = current_note < 108 ? current_note + 1 : 0;
+	// }
 }
 
 void loop()
@@ -2560,6 +2589,8 @@ void loop()
 				g_set_pwm[i](0, 0);
 				timers_end[i] = 0;
 				pwmValues[i] = 0;
+				toneValues[i] = -1;
+
 			}
 		}
 
@@ -2604,7 +2635,7 @@ void loop()
 		}
 		else if ((current_mode & MODE_MASK) == MIDI_MODE)
 		{
-			drawMidiActivity(tft, pwmValues, localUdpPort, ssid, udp_sending, osc_sending);
+			drawMidiActivity(tft, pwmValues, toneValues, localUdpPort, ssid, udp_sending, osc_sending);
 		}
 		else if ((current_mode & MODE_MASK) == SENSORS_MODE)
 		{
