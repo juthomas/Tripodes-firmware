@@ -201,8 +201,8 @@ void drawMidiActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t toneValues[3],
 	{
 		drawing_sprite.fillCircle(67, 120, pwmValues[0] / 2, TFT_BLUE);
 		drawing_sprite.setTextColor(TFT_WHITE);
-		drawing_sprite.setTextSize(1);
-		drawing_sprite.setCursor(62, 115);
+		drawing_sprite.setTextSize(2);
+		drawing_sprite.setCursor(57, 113);
 		drawing_sprite.printf("%c%c", HalfTonestoNote(toneValues[0]), toneValues[0] / 12 + '0');
 		// Serial.printf("Seconds lefts : %lf\n", timerAlarmReadSeconds(timers[0]));
 	}
@@ -210,16 +210,16 @@ void drawMidiActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t toneValues[3],
 	{
 		drawing_sprite.fillCircle(27, 190, pwmValues[1] / 2, TFT_BLUE);
 				drawing_sprite.setTextColor(TFT_WHITE);
-		drawing_sprite.setTextSize(1);
-		drawing_sprite.setCursor(22, 185);
+		drawing_sprite.setTextSize(2);
+		drawing_sprite.setCursor(17, 183);
 		drawing_sprite.printf("%c%c", HalfTonestoNote(toneValues[1]), toneValues[1] / 12 + '0');
 	}
 	if (pwmValues[2])
 	{
 		drawing_sprite.fillCircle(108, 190, pwmValues[2] / 2, TFT_BLUE);
 				drawing_sprite.setTextColor(TFT_WHITE);
-		drawing_sprite.setTextSize(1);
-		drawing_sprite.setCursor(103, 185);
+		drawing_sprite.setTextSize(2);
+		drawing_sprite.setCursor(98, 183);
 		drawing_sprite.printf("%c%c", HalfTonestoNote(toneValues[2]), toneValues[2] / 12 + '0');
 	}
 
